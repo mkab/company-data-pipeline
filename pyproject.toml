@@ -1,0 +1,122 @@
+[project]
+name = "company-data-pipeline"
+version = "0.1.0"
+description = "Collects company data from public sources, loads it into PostgreSQL and models it with dbt"
+requires-python = ">=3.14"
+dependencies = []
+
+
+[tool.uv]
+# The project is not installed as a package: uv installs its dependencies only
+package = false
+
+[dependency-groups]
+dev = [
+    "factory-boy>=3.3.3",
+    "mypy>=2.4.1",
+    "pre-commit>=4.7.0",
+    "pytest>=9.2.0",
+    "pytest-cov>=7.1.0",
+    "ruff>=0.17.6",
+]
+
+
+[tool.pytest.ini_options]
+python_files = "test_*.py"
+addopts = "--strict-markers"
+
+
+[tool.coverage.run]
+omit = ["tests/*", "**/tests/*", "**/test_*.py"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+    "def __str__",
+    "# pragma: no cover",
+]
+fail_under = 96
+
+
+[tool.mypy]
+strict = true
+warn_unreachable = true
+# A `# type: ignore` names the error code it silences
+enable_error_code = ["ignore-without-code"]
+explicit_package_bases = true
+# factory_boy types its factories but not its declarations,
+# so `factory.SubFactory(...)` and the like may be called from typed code
+untyped_calls_exclude = ["factory"]
+
+# Third-party packages that ship no types and have no stub package go here, never first-party modules
+# [[tool.mypy.overrides]]
+# module = []
+# ignore_missing_imports = true
+
+
+[tool.ruff]
+target-version = "py314"
+line-length = 99
+# Skip excluded files even when one is passed by name, e.g. by an editor formatting on save
+force-exclude = true
+fix = false
+
+
+[tool.ruff.lint]
+select = [
+  "E",    # pycodestyle
+  "W",    # pycodestyle
+  "F",    # Pyflakes
+  "B",    # flake8-bugbear
+  "BLE",  # flake8-blind-except: no `except Exception` that swallows the error
+  "C4",   # flake8-comprehensions
+  "D",    # flake8-docstrings
+  "DTZ",  # flake8-datetimez: no naive datetimes
+  "ERA",  # eradicate: no commented-out code
+  "FAST", # FastAPI
+  "I",    # isort
+  "N",    # pep8-naming
+  "PT",   # flake8-pytest-style
+  "Q",    # flake8-quotes
+  "RUF",  # Ruff-specific rules
+  "SIM",  # flake8-simplify
+  "T20",  # flake8-print
+  "TC",   # flake8-type-checking
+  "TID",  # flake8-tidy-imports
+  "UP",   # pyupgrade
+  "S608", # SQL built from strings (see "Never build SQL from strings" in CLAUDE.md)
+]
+
+ignore = [
+  "D100", # missing docstring in public module
+  "D101", # missing docstring in public class
+  "D102", # missing docstring in public method
+  "D103", # missing docstring in public function
+  "D104", # missing docstring in public package
+  "D105", # missing docstring in magic method
+  "D106", # missing docstring in public nested class
+  "D107", # missing docstring in __init__
+  "D203", # one-blank-line-before-class
+  "D205", # blank line required between summary line and description
+  "D213", # multi-line-summary-second-line
+  "E501", # line too long: ruff format handles it
+
+  "RUF012", # mutable class attributes should be annotated with `typing.ClassVar`
+]
+
+task-tags = ["HACK", "TODO", "FIXME"]
+
+
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "all"
+
+
+[tool.ruff.lint.flake8-type-checking]
+strict = true
+# These read their annotations at runtime, so the names in them must be importable
+runtime-evaluated-base-classes = ["pydantic.BaseModel"]
+
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["E402", "F401"]
