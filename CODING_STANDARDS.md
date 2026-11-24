@@ -46,8 +46,10 @@ Mechanical rules (formatting, import shape, raw SQL, types) are listed in `CLAUD
 ## Project rules
 
 - **Tables the application owns** have a UUID identifier and `created` / `modified` timestamps. Column names are lowercase `snake_case`.
-- **A column that cannot be null, added to a table the previous release writes, has a server default** in its migration. A deploy migrates before it rolls the services, so for a few minutes the previous release still inserts rows without the new column. A Python-side default does not help those inserts. A nullable column, and any column of a table this release creates, needs nothing.
-- **Dropping a column or table takes two releases**, for the same reason: the release still running keeps reading it until the rollout ends. The first release stops the code using it (and makes it nullable or gives it a server default, so inserts that leave it out still work). The next release, once the first is live in production, drops it.
+- **Every migration is backward compatible**: the application works with the latest schema and the one before it. A deploy migrates before it rolls the services, so for a few minutes the previous release runs against the new schema, and a rollback runs it there for longer. `docs/migrations.md` has the rules and the PostgreSQL recipes.
+- **A column that cannot be null, added to a table the previous release writes, has a server default** in its migration, because the previous release still inserts rows without it. A Python-side default does not help those inserts. A nullable column, and any column of a table this release creates, needs nothing.
+- **Dropping a column, table or enum value takes several releases**: deprecate it, stop the application using it, make sure the system runs stable without it, then drop it in a later cleanup release. Until the drop, it stays nullable or keeps a server default, so inserts that leave it out still work.
+- **Every migration has a rollback plan**, even one with complex steps. A controlled short downtime is better than an uncontrolled breakdown.
 - **Time** is stored in UTC.
 - **Resources are exposed by a unique identity** (a company number, a ticker), never by an auto-increment primary key.
 - **An exposed identifier is named `id`, or `<thing>_id` for another resource, and holds the UUID**, in response and request fields, query parameters and path parameters. Never `uuid` or `<thing>_uuid`.
