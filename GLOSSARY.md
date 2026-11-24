@@ -4,6 +4,12 @@ Public data about companies, loaded from SEC EDGAR, kept as source payloads, the
 
 ## Language
 
+### Sources
+
+**Source**:
+An external provider the pipeline collects data from, such as SEC EDGAR.
+_Avoid_: Provider, API, feed, upstream
+
 ### Companies
 
 **Company**:
