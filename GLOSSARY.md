@@ -63,5 +63,9 @@ One named item in a taxonomy that a value is tagged with, such as `us-gaap:Reven
 _Avoid_: Tag, field, line item
 
 **Fact**:
-One reported XBRL value: a concept, a unit, a period and the value, as stated in a filing. The same fact can be reported again in later filings.
+A company's value for one concept, unit and period, as stated by the most recent filing that reports it. A later filing that states a different value restates the fact.
 _Avoid_: Data point, metric, financial
+
+**Fact report**:
+One statement of a fact in one filing. The same fact is usually reported several times, for example in a 10-Q and again as a comparative in the next 10-K.
+_Avoid_: Occurrence, fact (for a single filing's statement)
