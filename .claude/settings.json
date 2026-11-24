@@ -1,0 +1,31 @@
+{
+  "enabledPlugins": {
+    "mattpocock-skills@claude-plugins-official": true
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh \"$CLAUDE_PROJECT_DIR/.claude/hooks/commit-guard.sh\"",
+            "statusMessage": "Checking branch"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "f=$(jq -r \".tool_input.file_path // .tool_response.filePath // empty\"); if [ -n \"$f\" ] && [ -f \"$f\" ] && LC_ALL=C grep -q $'\\xe2\\x80\\x94' \"$f\"; then printf \"{\\\"decision\\\":\\\"block\\\",\\\"reason\\\":\\\"Em dash found in %s. This project forbids em dashes: use a colon, a semicolon, parentheses, or reword.\\\"}\" \"$f\"; fi",
+            "statusMessage": "Checking for em dashes"
+          }
+        ]
+      }
+    ]
+  }
+}
