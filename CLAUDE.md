@@ -2,7 +2,7 @@
 
 ## Stack
 
-Python 3.14 + FastAPI, PostgreSQL, dbt (raw, staging and curated layers). `uv` manages dependencies.
+Python 3.14 + FastAPI, PostgreSQL 19 (Alembic migrations), dbt (raw, staging and curated layers). `uv` manages dependencies.
 
 ## Commands
 
@@ -28,6 +28,16 @@ Ruff (`pyproject.toml`) enforces most of these, plus no naive datetimes (`DTZ`),
 - **Enums and the constants derived from them go at the top of their module, directly under the imports, or in the package's `constants.py`.** Never partway down a file between classes.
 - **No `print`** in application code (ruff `T20`): use the logger.
 - **User-facing copy is sentence case**: every error message and response text. Proper nouns and acronyms keep their case.
+
+## Migrations
+
+The judgement rules (backward compatibility, drops over several releases, a rollback plan) are in `CODING_STANDARDS.md`. Every DDL change on an existing table follows the recipe in `docs/migrations.md`:
+
+- **Indexes are created and dropped `CONCURRENTLY`**, inside `op.get_context().autocommit_block()`.
+- **A foreign key takes three migrations**: add it `NOT VALID`, then `VALIDATE CONSTRAINT`, then create the index on the referencing column concurrently.
+- **An enum value is added with `ALTER TYPE ... ADD VALUE IF NOT EXISTS`** (`op.execute`), never by letting Alembic recreate the enum. An unused value stays deprecated rather than dropped; the rare real drop follows the new-column recipe in the doc.
+- **A column is made not null in two migrations**: `ADD CONSTRAINT <name> NOT NULL <column> NOT VALID`, then `VALIDATE CONSTRAINT`. Never `SET NOT NULL` on an existing table.
+- **Lint every migration with Squawk.**
 
 ## Git workflow
 
