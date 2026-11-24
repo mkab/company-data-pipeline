@@ -10,6 +10,18 @@ Public data about companies, loaded from SEC EDGAR, kept as source payloads, the
 An external provider the pipeline collects data from, such as SEC EDGAR.
 _Avoid_: Provider, API, feed, upstream
 
+**Dataset**:
+One kind of data a source publishes, such as the company tickers list, a company's submissions, or a company's facts.
+_Avoid_: Kind, endpoint, resource, feed
+
+**Fetch**:
+One retrieval of a dataset from a source, for one company or for the whole list, at a point in time. A fetch can find that a company has no data in that dataset.
+_Avoid_: Request, call, pull, load
+
+**Payload**:
+The body a fetch returned, kept as received. Several fetches can return the same payload.
+_Avoid_: Response, document, blob, record
+
 ### Companies
 
 **Company**:
