@@ -1,0 +1,65 @@
+# Each service connects with its own role, created by docker/initdb on an empty volume
+services:
+  db:
+    image: postgres:19.0
+    env_file: .env
+    ports:
+      - "${DB_PORT:-5433}:5432"
+    volumes:
+      - ./docker/initdb:/docker-entrypoint-initdb.d:ro
+      - db-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready --username \"$${POSTGRES_USER}\" --dbname \"$${POSTGRES_DB}\""]
+      interval: 2s
+      timeout: 5s
+      retries: 15
+
+  api:
+    build:
+      context: .
+      target: app
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+psycopg://api:${API_DB_PASSWORD}@db:5432/${POSTGRES_DB}
+      MIGRATIONS_DATABASE_URL: postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+    command: ["uvicorn", "pipeline.api.app:create_app", "--factory", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    ports:
+      - "${API_PORT:-8001}:8000"
+    volumes:
+      - .:/app
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # One-off (`docker compose run --rm ingest`): the profile keeps `up` from starting it
+  ingest:
+    profiles: [ingest]
+    build:
+      context: .
+      target: app
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+psycopg://ingest:${INGEST_DB_PASSWORD}@db:5432/${POSTGRES_DB}
+    volumes:
+      - .:/app
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # One-off (`docker compose run --rm dbt`): the profile keeps `up` from starting it
+  dbt:
+    profiles: [dbt]
+    build:
+      context: .
+      target: dbt
+    env_file: .env
+    environment:
+      DBT_PROFILES_DIR: /app/dbt
+    volumes:
+      - .:/app
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  db-data:
