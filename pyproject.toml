@@ -3,7 +3,15 @@ name = "company-data-pipeline"
 version = "0.1.0"
 description = "Collects company data from public sources, loads it into PostgreSQL and models it with dbt"
 requires-python = ">=3.14"
-dependencies = []
+dependencies = [
+    "alembic>=1.20.1",
+    "fastapi>=0.165.0",
+    "psycopg[binary]>=3.3.9",
+    "pydantic>=2.14.4",
+    "pydantic-settings>=2.16.3",
+    "sqlalchemy[asyncio]>=2.1",
+    "uvicorn>=0.54.0",
+]
 
 
 [tool.uv]
@@ -11,8 +19,14 @@ dependencies = []
 package = false
 
 [dependency-groups]
+dbt = [
+    "dbt-core>=1.12.7,<2",
+    "dbt-postgres>=1.11.0",
+]
 dev = [
+    "anyio>=4.16.0",
     "factory-boy>=3.3.3",
+    "httpx>=0.28.1",
     "mypy>=2.4.1",
     "pre-commit>=4.7.0",
     "pytest>=9.2.0",
@@ -24,10 +38,14 @@ dev = [
 [tool.pytest.ini_options]
 python_files = "test_*.py"
 addopts = "--strict-markers"
+# `pipeline` is imported from the repo root, since uv does not install the project as a package
+pythonpath = ["."]
 
 
 [tool.coverage.run]
-omit = ["tests/*", "**/tests/*", "**/test_*.py"]
+# The Alembic environment is run by `alembic`, not by the tests,
+# and `make migrations-check` exercises it in CI
+omit = ["tests/*", "**/tests/*", "**/test_*.py", "conftest.py", "migrations/*"]
 
 [tool.coverage.report]
 exclude_lines = [
