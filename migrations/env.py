@@ -6,8 +6,8 @@ from alembic import context
 from sqlalchemy import Table, pool
 from sqlalchemy.ext.asyncio import create_async_engine
 
-from pipeline.database import ALEMBIC_SCHEMAS, DATABASE_URL_ATTRIBUTE, alembic_metadata
-from pipeline.settings import get_settings
+from pipeline.database import ALEMBIC_SCHEMAS, alembic_metadata
+from pipeline.settings import get_migration_settings
 
 if TYPE_CHECKING:
     from alembic.runtime.environment import NameFilterType
@@ -18,14 +18,6 @@ config = context.config
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
-
-
-def database_url() -> str:
-    """Return the URL to migrate: the caller's when it set one, else the owner role's."""
-    url = config.attributes.get(DATABASE_URL_ATTRIBUTE)
-    if url is not None:
-        return str(url)
-    return get_settings().migrations_database_url
 
 
 def include_object(
@@ -47,7 +39,7 @@ def include_object(
 def run_migrations_offline() -> None:
     """Emit the migrations as SQL, without a database connection."""
     context.configure(
-        url=database_url(),
+        url=get_migration_settings().migrations_database_url,
         target_metadata=alembic_metadata,
         include_schemas=True,
         include_object=include_object,
@@ -70,7 +62,9 @@ def do_run_migrations(connection: Connection) -> None:
 
 
 async def run_async_migrations() -> None:
-    engine = create_async_engine(database_url(), poolclass=pool.NullPool)
+    engine = create_async_engine(
+        get_migration_settings().migrations_database_url, poolclass=pool.NullPool
+    )
     async with engine.connect() as connection:
         await connection.run_sync(do_run_migrations)
     await engine.dispose()
