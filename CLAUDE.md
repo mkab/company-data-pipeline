@@ -7,13 +7,27 @@ Python 3.14 + FastAPI, PostgreSQL 19 (Alembic migrations), dbt (raw, staging and
 ## Commands
 
 ```sh
-uv sync              # install dependencies
-pre-commit install   # once per clone: installs the pre-commit and commit-msg hooks
-make lint            # ruff format --check, ruff check, mypy (no fixes)
-make format          # ruff format, ruff check --fix
-make tests           # pytest -v
-make covtest         # coverage HTML report -> htmlcov/index.html (fail_under = 96)
+uv sync                  # install dependencies on the host (main plus dev groups)
+pre-commit install       # once per clone: installs the pre-commit and commit-msg hooks
+make help                # list every target
+make env                 # copy .env.example to .env when .env is missing
+make up                  # start db and api (api on localhost:8001, db on localhost:5433)
+make up-build            # rebuild the images, then start db and api
+make down                # stop the containers
+make destroy             # stop the containers, remove their local images and volumes
+make clean               # remove caches and coverage output
+make outdated            # list direct dependencies with a newer release
+make upgrade [PACKAGE=]  # upgrade the lock (one package or all), sync, rebuild
+make migrate             # alembic upgrade head, in the app container
+make migration MSG=      # autogenerate a migration, in the app container
+make lint                # ruff format --check, ruff check, mypy (no fixes), on the host
+make format              # ruff format, ruff check --fix, on the host
+make tests               # pytest -v, in the app container, against pipeline_test
+make covtest             # coverage HTML report -> htmlcov/index.html (fail_under = 96), in the app container
 ```
+
+Everything that touches the database runs in a container, and `make up` never starts the one-off `ingest` and `dbt` services (they sit behind Compose profiles).
+Each service connects with its own role (`ingest`, `dbt`, `api`, created by `docker/initdb` on an empty volume) through `DATABASE_URL`, and Alembic connects as the owner through `MIGRATIONS_DATABASE_URL`.
 
 The pre-commit hook runs `make format` and mypy on any commit touching Python, and the commit-msg hook (`bin/check-commit-msg.sh`) refuses a message without an allowed prefix. Never bypass them with `--no-verify`.
 
