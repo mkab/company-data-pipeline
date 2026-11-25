@@ -43,8 +43,7 @@ pythonpath = ["."]
 
 
 [tool.coverage.run]
-# The Alembic environment is run by `alembic`, not by the tests,
-# and `make migrations-check` exercises it in CI
+# The Alembic environment is run by `alembic` (`make migrate`), not imported by the tests
 omit = ["tests/*", "**/tests/*", "**/test_*.py", "conftest.py", "migrations/*"]
 
 [tool.coverage.report]

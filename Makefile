@@ -1,5 +1,3 @@
-SHELL = /bin/bash
-
 # Everything that touches the database runs in a container from the `app` image.
 # lint and format run on the host through uv, since the pre-commit hook calls `make format`
 APP_RUN = docker compose run --rm api
@@ -22,7 +20,7 @@ help:
 	@echo "  lint           	run the code linters, without fixing anything"
 	@echo "  format         	reformat code and apply the safe lint fixes"
 	@echo "  tests          	run all the tests"
-	@echo "  covtest        	run all the tests with coverage in html mode. The coverage can be viewed in the file htmlcov/index.html"
+	@echo "  covtest        	run all the tests with coverage in HTML mode. The coverage can be viewed in the file htmlcov/index.html"
 	@echo ""
 	@echo "Check the Makefile to know exactly what each target is doing."
 
