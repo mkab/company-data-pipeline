@@ -17,10 +17,12 @@ help:
 	@echo "                 	(PACKAGE=<name> upgrades only that package)"
 	@echo "  migrate        	apply the migrations (alembic upgrade head)"
 	@echo "  migration      	autogenerate a migration file (MSG=<message> is required)"
+	@echo "  migrations-check	check no migration is missing, then run them up, down to base and up again"
 	@echo "  lint           	run the code linters, without fixing anything"
 	@echo "  format         	reformat code and apply the safe lint fixes"
-	@echo "  tests          	run all the tests"
+	@echo "  tests          	run all the tests (ARGS=<pytest options> are passed on)"
 	@echo "  covtest        	run all the tests with coverage in HTML mode. The coverage can be viewed in the file htmlcov/index.html"
+	@echo "                 	(ARGS=<pytest options> are passed on)"
 	@echo ""
 	@echo "Check the Makefile to know exactly what each target is doing."
 
@@ -74,6 +76,12 @@ migration:
 	@test -n "$(MSG)" || (echo 'MSG is required, such as: make migration MSG="add raw tables"' && exit 1)
 	$(APP_RUN) alembic revision --autogenerate -m "$(MSG)"
 
+.PHONY: migrations-check
+migrations-check:
+	@# `alembic check` fails when the models differ from the migrations (a migration is missing).
+	@# The round trip fails when a downgrade raises or an upgrade cannot run twice (see docs/migrations.md)
+	$(APP_RUN) sh -c "alembic check && alembic upgrade head && alembic downgrade base && alembic upgrade head"
+
 .PHONY: lint
 lint:
 	uv run ruff format --check --diff .
@@ -87,8 +95,8 @@ format:
 
 .PHONY: tests
 tests:
-	$(APP_RUN) pytest -v
+	$(APP_RUN) pytest -v $(ARGS)
 
 .PHONY: covtest
 covtest:
-	$(APP_RUN) pytest -v --cov --cov-report=html
+	$(APP_RUN) pytest -v --cov --cov-report=html $(ARGS)
