@@ -1,4 +1,4 @@
-# Everything that touches the database runs in a container from the `app` image.
+# Everything that touches the database runs in a container of the `api` service, built from the `app` image.
 # lint and format run on the host through uv, since the pre-commit hook calls `make format`
 APP_RUN = docker compose run --rm api
 
@@ -7,10 +7,10 @@ help:
 	@echo "Please use 'make <target>' where <target> is one of:"
 	@echo ""
 	@echo "  env            	copy .env.example to .env when .env is missing"
-	@echo "  up             	spin up the docker containers (db and api)"
-	@echo "  up-build       	rebuild the docker images and spin up the docker containers"
-	@echo "  down           	stop the docker containers"
-	@echo "  destroy        	stop the docker containers and remove their local images and volumes"
+	@echo "  up             	spin up the Docker containers (db and api)"
+	@echo "  up-build       	rebuild the Docker images and spin up the Docker containers"
+	@echo "  down           	stop the Docker containers"
+	@echo "  destroy        	stop the Docker containers and remove their local images and volumes"
 	@echo "  clean          	remove all temporary and bytecode files/folders"
 	@echo "  outdated       	list the direct dependencies that have a newer release"
 	@echo "  upgrade        	upgrade the locked dependencies within the pyproject.toml constraints and rebuild the images"

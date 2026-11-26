@@ -17,7 +17,7 @@ TEST_DATABASE_NAME = "pipeline_test"
 ALEMBIC_CONFIG_PATH = Path(__file__).parent / "alembic.ini"
 
 
-def on_test_database(url: str) -> str:
+def with_test_database_name(url: str) -> str:
     """Return the same connection URL, pointed at the test database."""
     return make_url(url).set(database=TEST_DATABASE_NAME).render_as_string(hide_password=False)
 
@@ -34,16 +34,16 @@ def anyio_backend() -> str:
 
 
 @pytest.fixture(scope="session", autouse=True)
-def test_database_urls() -> Iterator[None]:
+def point_settings_at_test_database() -> Iterator[None]:
     """Point every database URL at the test database for the whole session.
 
     So no test touches the development data, whichever role it connects with.
     """
     with pytest.MonkeyPatch.context() as monkeypatch:
-        monkeypatch.setenv("DATABASE_URL", on_test_database(get_settings().database_url))
+        monkeypatch.setenv("DATABASE_URL", with_test_database_name(get_settings().database_url))
         monkeypatch.setenv(
             "MIGRATIONS_DATABASE_URL",
-            on_test_database(get_migration_settings().migrations_database_url),
+            with_test_database_name(get_migration_settings().migrations_database_url),
         )
         clear_settings_caches()
         yield
@@ -51,6 +51,6 @@ def test_database_urls() -> Iterator[None]:
 
 
 @pytest.fixture(scope="session", autouse=True)
-def migrated_test_database(test_database_urls: None) -> None:
+def migrated_test_database(point_settings_at_test_database: None) -> None:
     """Bring the test database to the latest migration, once per session."""
     command.upgrade(Config(ALEMBIC_CONFIG_PATH), "head")
