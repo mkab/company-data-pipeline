@@ -21,7 +21,8 @@ make upgrade [PACKAGE=]  # upgrade the lock (one package or all), sync, rebuild
 make migrate             # alembic upgrade head, in the app container
 make migration MSG=      # autogenerate a migration, in the app container
 make migrations-check    # upgrade head, alembic check, downgrade base, upgrade head (empties the dev database)
-make lint                # ruff format --check, ruff check, mypy (no fixes), on the host
+make lint                # ruff format --check, ruff check, mypy (no fixes), lint-migrations, on the host
+make lint-migrations     # Squawk over each revision's offline SQL (`.squawk.toml`), on the host
 make format              # ruff format, ruff check --fix, on the host
 make tests [ARGS=]       # pytest -v, in the app container, against pipeline_test
 make covtest [ARGS=]     # coverage HTML report -> htmlcov/index.html (fail_under = 96), in the app container
@@ -32,7 +33,7 @@ Each service connects with its own role (`ingest`, `dbt`, `api`, created by `doc
 
 CI (`.github/workflows/ci.yml`) runs the jobs `lint`, `tests` and `pr-title` on every PR, and `tests` again on the merge to `main`; the ruleset on `main` requires all three. A job renamed in the workflow is renamed in the ruleset too.
 
-The pre-commit hook runs `make format` and mypy on any commit touching Python, and the commit-msg hook (`bin/check-commit-msg.sh`) refuses a message without an allowed prefix. Never bypass them with `--no-verify`.
+The pre-commit hook runs `make format` and mypy on any commit touching Python, `make lint-migrations` on any commit touching `migrations/`, and the commit-msg hook (`bin/check-commit-msg.sh`) refuses a message without an allowed prefix. Never bypass them with `--no-verify`.
 
 ## Code conventions
 
@@ -56,7 +57,7 @@ The judgement rules (backward compatibility, drops over several releases, a roll
 - **An enum value is added with `ALTER TYPE ... ADD VALUE IF NOT EXISTS`** (`op.execute`), never by letting Alembic recreate the enum. An unused value stays deprecated rather than dropped; the rare real drop follows the new-column recipe in the doc.
 - **A column is made not null in two migrations**: `ADD CONSTRAINT <name> NOT NULL <column> NOT VALID`, then `VALIDATE CONSTRAINT`. Never `SET NOT NULL` on an existing table.
 - **Every migration has a `downgrade()` that runs**: `make migrations-check` (in CI) round-trips them. A downgrade never raises: an irreversible one restores the structure (or is a commented no-op with an idempotent upgrade) and its docstring says how the data is recovered.
-- **Lint every migration with Squawk.**
+- **Lint every migration with Squawk**: `make lint-migrations`, in `make lint` and the pre-commit hook. A rule turned off in `.squawk.toml` has a comment saying why.
 
 ## Git workflow
 

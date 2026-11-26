@@ -25,3 +25,11 @@ repos:
         pass_filenames: false
         types: [python]
         stages: [pre-commit]
+
+      - id: lint-migrations
+        name: Lint migrations (Squawk)
+        entry: make lint-migrations
+        language: system
+        pass_filenames: false
+        files: ^(migrations/|\.squawk\.toml$|bin/lint_migrations\.py$)
+        stages: [pre-commit]

@@ -33,6 +33,7 @@ dev = [
     "pytest-cov>=7.1.0",
     "pytest-recording>=0.15.0",
     "ruff>=0.17.6",
+    "squawk-cli>=2.74.0",
 ]
 
 
