@@ -1,5 +1,6 @@
 from typing import TYPE_CHECKING
 
+import sqlalchemy as sa
 from sqlalchemy import MetaData
 
 if TYPE_CHECKING:
@@ -7,7 +8,8 @@ if TYPE_CHECKING:
 
 # Alembic manages these schemas only.
 # dbt creates and owns `staging` and `curated`, so autogenerate must never touch them
-ALEMBIC_SCHEMAS = frozenset({"raw"})
+RAW_SCHEMA = "raw"
+ALEMBIC_SCHEMAS = frozenset({RAW_SCHEMA})
 
 # Named constraints let a later migration refer to them, as the recipes in docs/migrations.md do
 NAMING_CONVENTION = {
@@ -20,6 +22,32 @@ NAMING_CONVENTION = {
 
 # The tables Alembic manages are declared on this metadata
 alembic_metadata = MetaData(naming_convention=NAMING_CONVENTION)
+
+
+def standard_columns() -> list[sa.Column[object]]:
+    """Return the columns every table starts with (see `CODING_STANDARDS.md`)."""
+    return [
+        sa.Column("id", sa.BigInteger, sa.Identity(), primary_key=True),
+        sa.Column(
+            "uuid",
+            sa.Uuid,
+            server_default=sa.text("gen_random_uuid()"),
+            unique=True,
+            nullable=False,
+        ),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.func.now(),
+            nullable=False,
+        ),
+        sa.Column(
+            "modified_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.func.now(),
+            nullable=False,
+        ),
+    ]
 
 
 def include_managed_schemas(

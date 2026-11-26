@@ -3,42 +3,13 @@ from enum import StrEnum
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import BYTEA, JSONB
 
-from pipeline.database import alembic_metadata
+from pipeline.database import RAW_SCHEMA, alembic_metadata, standard_columns
 
 
 class EdgarDataset(StrEnum):
     COMPANY_TICKERS = "company_tickers"
     SUBMISSIONS = "submissions"
     COMPANY_FACTS = "company_facts"
-
-
-RAW_SCHEMA = "raw"
-
-
-def standard_columns() -> list[sa.Column[object]]:
-    """Return the columns every table starts with (see `CODING_STANDARDS.md`)."""
-    return [
-        sa.Column("id", sa.BigInteger, sa.Identity(), primary_key=True),
-        sa.Column(
-            "uuid",
-            sa.Uuid,
-            server_default=sa.text("gen_random_uuid()"),
-            unique=True,
-            nullable=False,
-        ),
-        sa.Column(
-            "created_at",
-            sa.DateTime(timezone=True),
-            server_default=sa.func.now(),
-            nullable=False,
-        ),
-        sa.Column(
-            "modified_at",
-            sa.DateTime(timezone=True),
-            server_default=sa.func.now(),
-            nullable=False,
-        ),
-    ]
 
 
 # One row per distinct body: fetches that return the same bytes share it
