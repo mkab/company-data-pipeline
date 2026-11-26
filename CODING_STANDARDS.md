@@ -50,6 +50,7 @@ Mechanical rules (formatting, import shape, raw SQL, types) are listed in `CLAUD
 - **A column that cannot be null, added to a table the previous release writes, has a server default** in its migration, because the previous release still inserts rows without it. A Python-side default does not help those inserts. A nullable column, and any column of a table this release creates, needs nothing.
 - **Dropping a column, table or enum value takes several releases**: deprecate it, stop the application using it, make sure the system runs stable without it, then drop it in a later cleanup release. Until the drop, it stays nullable or keeps a server default, so inserts that leave it out still work.
 - **Every migration has a rollback plan**, even one with complex steps. A controlled short downtime is better than an uncontrolled breakdown.
+- **A migration never backfills large amounts of data.** A long run hits the migration timeout and fails the deployment. The backfill runs as its own job, in batches, outside the deployment.
 - **Time** is stored in UTC.
 - **Resources are exposed by a unique identity** (a company number, a ticker), never by an auto-increment primary key.
 - **An exposed identifier is named `id`, or `<thing>_id` for another resource, and holds the UUID**, in response and request fields, query parameters and path parameters. Never `uuid` or `<thing>_uuid`.

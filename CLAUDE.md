@@ -45,9 +45,10 @@ Ruff (`pyproject.toml`) enforces most of these, plus no naive datetimes (`DTZ`),
 
 ## Migrations
 
-The judgement rules (backward compatibility, drops over several releases, a rollback plan) are in `CODING_STANDARDS.md`. Every DDL change on an existing table follows the recipe in `docs/migrations.md`:
+The judgement rules (backward compatibility, drops over several releases, a rollback plan, no large backfills) are in `CODING_STANDARDS.md`. Every DDL change on an existing table follows the recipe in `docs/migrations.md`:
 
 - **Indexes are created and dropped `CONCURRENTLY`**, inside `op.get_context().autocommit_block()`.
+- **A big index gets its own migration revision**, with no other DDL, following the guarded recipe in the doc.
 - **A foreign key takes three migrations**: add it `NOT VALID`, then `VALIDATE CONSTRAINT`, then create the index on the referencing column concurrently.
 - **An enum value is added with `ALTER TYPE ... ADD VALUE IF NOT EXISTS`** (`op.execute`), never by letting Alembic recreate the enum. An unused value stays deprecated rather than dropped; the rare real drop follows the new-column recipe in the doc.
 - **A column is made not null in two migrations**: `ADD CONSTRAINT <name> NOT NULL <column> NOT VALID`, then `VALIDATE CONSTRAINT`. Never `SET NOT NULL` on an existing table.
