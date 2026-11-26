@@ -20,7 +20,7 @@ Migrations are written with Alembic.
 
 ## Every migration can be downgraded
 
-`make migrations-check` (run in CI on every PR) runs `alembic check`, then the round trip `upgrade head`, `downgrade base`, `upgrade head`. So:
+`make migrations-check` (run in CI on every PR and on the merge to `main`) runs `alembic check`, then the round trip `upgrade head`, `downgrade base`, `upgrade head`. So:
 
 - Every migration has a `downgrade()` that runs.
 - It may be an explicit no-op, with a comment saying why (an enum value added, a data backfill). Its upgrade then runs a second time on the way back up, so it must be idempotent: `ADD VALUE IF NOT EXISTS`, `IF NOT EXISTS` DDL.

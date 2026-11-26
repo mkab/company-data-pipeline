@@ -18,6 +18,7 @@ help:
 	@echo "  migrate        	apply the migrations (alembic upgrade head)"
 	@echo "  migration      	autogenerate a migration file (MSG=<message> is required)"
 	@echo "  migrations-check	check no migration is missing, then run them up, down to base and up again"
+	@echo "                 	(the downgrade empties the development database)"
 	@echo "  lint           	run the code linters, without fixing anything"
 	@echo "  format         	reformat code and apply the safe lint fixes"
 	@echo "  tests          	run all the tests (ARGS=<pytest options> are passed on)"
