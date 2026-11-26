@@ -16,7 +16,8 @@ class MigrationSettings(BaseSettings):
     """Configuration Alembic reads from environment variables.
 
     `MIGRATIONS_DATABASE_URL` connects as the owner role.
-    It is kept apart from `Settings`, so a service never needs the owner's credentials to start.
+    It is kept apart from `Settings`,
+    so application code never reads the owner's credentials, only Alembic does.
     """
 
     migrations_database_url: str
