@@ -1,21 +1,94 @@
+# Everything that touches the database runs in a container of the `api` service, built from the `app` image.
+# lint and format run on the host through uv, since the pre-commit hook calls `make format`
+APP_RUN = docker compose run --rm api
+
+.PHONY: help
+help:
+	@echo "Please use 'make <target>' where <target> is one of:"
+	@echo ""
+	@echo "  env            	copy .env.example to .env when .env is missing"
+	@echo "  up             	spin up the Docker containers (db and api)"
+	@echo "  up-build       	rebuild the Docker images and spin up the Docker containers"
+	@echo "  down           	stop the Docker containers"
+	@echo "  destroy        	stop the Docker containers and remove their local images and volumes"
+	@echo "  clean          	remove all temporary and bytecode files/folders"
+	@echo "  outdated       	list the direct dependencies that have a newer release"
+	@echo "  upgrade        	upgrade the locked dependencies within the pyproject.toml constraints and rebuild the images"
+	@echo "                 	(PACKAGE=<name> upgrades only that package)"
+	@echo "  migrate        	apply the migrations (alembic upgrade head)"
+	@echo "  migration      	autogenerate a migration file (MSG=<message> is required)"
+	@echo "  lint           	run the code linters, without fixing anything"
+	@echo "  format         	reformat code and apply the safe lint fixes"
+	@echo "  tests          	run all the tests"
+	@echo "  covtest        	run all the tests with coverage in HTML mode. The coverage can be viewed in the file htmlcov/index.html"
+	@echo ""
+	@echo "Check the Makefile to know exactly what each target is doing."
+
+.PHONY: env
+env:
+	@test -f .env && echo ".env already exists, leaving it as it is" || (cp .env.example .env && echo "Created .env from .env.example")
+
+.PHONY: up
+up:
+	docker compose up -d
+
+.PHONY: up-build
+up-build:
+	docker compose up -d --build
+
+.PHONY: down
+down:
+	docker compose down
+
+.PHONY: destroy
+destroy:
+	docker compose down --rmi local --volumes
+
+.PHONY: clean
+clean:
+	find . -depth -type d -name "__pycache__" -not -path "./.venv/*" -exec rm -r "{}" +
+	find . -depth -type d -name ".mypy_cache" -exec rm -r "{}" +
+	find . -depth -type d -name ".pytest_cache" -exec rm -r "{}" +
+	find . -depth -type d -name ".ruff_cache" -exec rm -r "{}" +
+	rm -rf htmlcov .coverage
+
+.PHONY: outdated
+outdated:
+	@# Lists every direct dependency whose latest release is newer than the locked one,
+	@# including those held back by a cap or pin in pyproject.toml
+	uv tree --all-groups --depth 1 --outdated | grep latest || echo "Every direct dependency is on its latest release"
+
+.PHONY: upgrade
+upgrade:
+	@# Raising a cap or pin is done by hand in pyproject.toml first: this stays within the constraints
+	uv lock $(if $(PACKAGE),--upgrade-package $(PACKAGE),--upgrade)
+	uv sync
+	docker compose up -d --build
+
+.PHONY: migrate
+migrate:
+	$(APP_RUN) alembic upgrade head
+
+.PHONY: migration
+migration:
+	@test -n "$(MSG)" || (echo 'MSG is required, such as: make migration MSG="add raw tables"' && exit 1)
+	$(APP_RUN) alembic revision --autogenerate -m "$(MSG)"
+
 .PHONY: lint
 lint:
 	uv run ruff format --check --diff .
 	uv run ruff check .
 	uv run mypy .
 
-
 .PHONY: format
 format:
 	uv run ruff format .
 	uv run ruff check --fix .
 
-
 .PHONY: tests
 tests:
-	uv run pytest -v
-
+	$(APP_RUN) pytest -v
 
 .PHONY: covtest
 covtest:
-	uv run pytest -v --cov --cov-report=html
+	$(APP_RUN) pytest -v --cov --cov-report=html
