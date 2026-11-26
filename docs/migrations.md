@@ -16,6 +16,7 @@ Migrations are written with Alembic.
   4. Drop it in a new migration, as a cleanup release.
 - Always have a rollback plan, even if it needs complex steps. A controlled short downtime is better than an uncontrolled breakdown.
 - Lint every migration with [Squawk](https://squawkhq.com/docs/web-frameworks#alembic-and-sqlalchemy).
+- A migration does not backfill large amounts of data (filling nulls, denormalising, moving data between tables). A long run hits the migration timeout and fails anyway. The migration changes the schema; the backfill runs as its own job, in batches, outside the deployment.
 
 ## Lock levels
 
@@ -66,7 +67,53 @@ def downgrade() -> None:
 - `CONCURRENTLY` takes longer but does not block table access.
 - It cannot run inside a transaction block, hence `autocommit_block()`.
 - It may fail and leave an invalid index behind, which has to be dropped before retrying.
+- `IF NOT EXISTS` treats an invalid index as existing and skips the build, so a guarded migration checks for one first (see below).
 - With the asyncpg driver there is a [known issue](https://github.com/sqlalchemy/alembic/discussions/1461): inside `autocommit_block()` the migration can lose its connection and cannot tell whether the index was created. On a large index the migration fails while the build is still running in the database. Do not panic: check that the migration's changes are in the schema and the index exists, then set `alembic_version` in the database to the failed migration's revision and restart the deployment. The applied migration is skipped and the deployment continues.
+
+### A big index
+
+A big index can take longer to build than the statement timeout allows.
+Its migration lifts the timeout for the build only, refuses to run over an invalid index left by a failed attempt, and is safe to rerun:
+
+```python
+import sqlalchemy as sa
+from alembic import op
+
+
+def upgrade() -> None:
+    with op.get_context().autocommit_block():
+        invalid = op.get_bind().scalar(
+            sa.text(
+                "SELECT NOT indisvalid FROM pg_index "
+                "WHERE indexrelid = to_regclass('sales.sales_quantity_index')"
+            )
+        )
+        if invalid:
+            raise RuntimeError("sales.sales_quantity_index is invalid: drop and rebuild it")
+        op.execute("SET statement_timeout = 0")
+        op.execute(
+            "CREATE INDEX CONCURRENTLY IF NOT EXISTS sales_quantity_index "
+            "ON sales.sales_table (quantity)"
+        )
+        op.execute("RESET statement_timeout")
+
+
+def downgrade() -> None:
+    with op.get_context().autocommit_block():
+        op.execute("DROP INDEX CONCURRENTLY IF EXISTS sales.sales_quantity_index")
+```
+
+`RESET` returns the timeout to the connection's default, so no value is built into the statement.
+
+#### Deploying it
+
+Three timeouts can stop a big index build during a deployment:
+
+- **Statement timeout**: set to `0` for the build above, so PostgreSQL never interrupts it, then reset.
+- **Deployment timeout**: if the build outlasts it, the deployment fails but the build keeps running in the database. Wait until the index is built (or has failed), then restart the deployment; the rerun skips the existing index and finishes.
+- **CI job timeout**: a healthy deployment never reaches it.
+
+Keep a big index in its own migration revision, apart from any other DDL. If the build fails partway, the schema is left out of step with the application, and a revision holding only the index keeps that mismatch to one index.
 
 ### Sources
 
