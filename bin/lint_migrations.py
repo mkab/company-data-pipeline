@@ -4,7 +4,8 @@ Squawk does not apply its locking rules to a table created earlier in the same S
 Linting the whole chain as one script would let a blocking change to an existing table through,
 so each revision is linted on its own.
 
-Usage: `make lint-migrations`. It needs no database, only a placeholder `MIGRATIONS_DATABASE_URL`.
+Usage: `make lint-migrations`.
+It needs no database, only a placeholder `MIGRATIONS_DATABASE_URL`.
 """
 
 import io
