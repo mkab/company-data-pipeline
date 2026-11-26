@@ -25,7 +25,8 @@ def upgrade() -> None:
     op.execute("CREATE SCHEMA raw")
     op.execute("GRANT USAGE ON SCHEMA raw TO ingest, dbt")
     # Every table created in raw from now on, these two included, inherits the grants.
-    # ingest only appends and dbt only reads, so neither can rewrite the history
+    # ingest only appends and dbt only reads, so neither can rewrite the history.
+    # Default privileges cover the tables the migrating (owner) role creates, which is every raw table
     op.execute("ALTER DEFAULT PRIVILEGES IN SCHEMA raw GRANT INSERT, SELECT ON TABLES TO ingest")
     op.execute("ALTER DEFAULT PRIVILEGES IN SCHEMA raw GRANT SELECT ON TABLES TO dbt")
     op.create_table(
