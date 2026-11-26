@@ -30,7 +30,7 @@ CONFIGURE_OPTIONS: dict[str, Any] = {
 
 # Set once per run, before the first migration, and kept by the session across autocommit blocks.
 # A migration waiting on a busy table gives up instead of queueing every query behind it.
-# A long build (see "A big index" in docs/migrations.md) lifts the statement timeout for itself only
+# A long build (see "A big index" in docs/migrations.md) lifts the statement timeout, then sets it back
 SESSION_TIMEOUTS = (
     "SET lock_timeout = '5s'",
     "SET statement_timeout = '60s'",

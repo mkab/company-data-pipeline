@@ -114,7 +114,7 @@ def upgrade() -> None:
             "CREATE INDEX CONCURRENTLY IF NOT EXISTS sales_quantity_index "
             "ON sales.sales_table (quantity)"
         )
-        op.execute("RESET statement_timeout")
+        op.execute("SET statement_timeout = '60s'")
 
 
 def downgrade() -> None:
@@ -122,7 +122,8 @@ def downgrade() -> None:
         op.execute("DROP INDEX CONCURRENTLY IF EXISTS sales.sales_quantity_index")
 ```
 
-`RESET` returns the timeout to the connection's default, so no value is built into the statement.
+The last `SET` puts back the timeout `migrations/env.py` sets for every run (`SESSION_TIMEOUTS`), so the revisions after it keep it.
+A `RESET` would not: it returns to the role's default, which has no timeout.
 
 #### Deploying it
 
