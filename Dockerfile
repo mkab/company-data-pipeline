@@ -1,5 +1,5 @@
 # The one place the uv version is set: every stage copies uv from this image
-FROM ghcr.io/astral-sh/uv:0.13.0 AS uv
+FROM ghcr.io/astral-sh/uv:0.13.10 AS uv
 
 
 FROM python:3.14-slim-trixie AS base
