@@ -20,14 +20,17 @@ make outdated            # list direct dependencies with a newer release
 make upgrade [PACKAGE=]  # upgrade the lock (one package or all), sync, rebuild
 make migrate             # alembic upgrade head, in the app container
 make migration MSG=      # autogenerate a migration, in the app container
+make migrations-check    # upgrade head, alembic check, downgrade base, upgrade head (empties the dev database)
 make lint                # ruff format --check, ruff check, mypy (no fixes), on the host
 make format              # ruff format, ruff check --fix, on the host
-make tests               # pytest -v, in the app container, against pipeline_test
-make covtest             # coverage HTML report -> htmlcov/index.html (fail_under = 96), in the app container
+make tests [ARGS=]       # pytest -v, in the app container, against pipeline_test
+make covtest [ARGS=]     # coverage HTML report -> htmlcov/index.html (fail_under = 96), in the app container
 ```
 
 Everything that touches the database runs in a container, and `make up` never starts the one-off `ingest` and `dbt` services (they sit behind Compose profiles).
 Each service connects with its own role (`ingest`, `dbt`, `api`, created by `docker/initdb` on an empty volume) through `DATABASE_URL`, and Alembic connects as the owner through `MIGRATIONS_DATABASE_URL`.
+
+CI (`.github/workflows/ci.yml`) runs the jobs `lint`, `tests` and `pr-title` on every PR, and `tests` again on the merge to `main`; the ruleset on `main` requires all three. A job renamed in the workflow is renamed in the ruleset too.
 
 The pre-commit hook runs `make format` and mypy on any commit touching Python, and the commit-msg hook (`bin/check-commit-msg.sh`) refuses a message without an allowed prefix. Never bypass them with `--no-verify`.
 
@@ -52,6 +55,7 @@ The judgement rules (backward compatibility, drops over several releases, a roll
 - **A foreign key takes three migrations**: add it `NOT VALID`, then `VALIDATE CONSTRAINT`, then create the index on the referencing column concurrently.
 - **An enum value is added with `ALTER TYPE ... ADD VALUE IF NOT EXISTS`** (`op.execute`), never by letting Alembic recreate the enum. An unused value stays deprecated rather than dropped; the rare real drop follows the new-column recipe in the doc.
 - **A column is made not null in two migrations**: `ADD CONSTRAINT <name> NOT NULL <column> NOT VALID`, then `VALIDATE CONSTRAINT`. Never `SET NOT NULL` on an existing table.
+- **Every migration has a `downgrade()` that runs**: `make migrations-check` (in CI) round-trips them. A downgrade never raises: an irreversible one restores the structure (or is a commented no-op with an idempotent upgrade) and its docstring says how the data is recovered.
 - **Lint every migration with Squawk.**
 
 ## Git workflow

@@ -18,6 +18,25 @@ Migrations are written with Alembic.
 - Lint every migration with [Squawk](https://squawkhq.com/docs/web-frameworks#alembic-and-sqlalchemy).
 - A migration does not backfill large amounts of data (filling nulls, denormalising, moving data between tables). A long run hits the migration timeout and fails anyway. The migration changes the schema; the backfill runs as its own job, in batches, outside the deployment.
 
+## Every migration can be downgraded
+
+`make migrations-check` (run in CI on every PR and on the merge to `main`) runs `upgrade head`, then `alembic check`, then the round trip `downgrade base`, `upgrade head`. So:
+
+- Every migration has a `downgrade()` that runs. A downgrade never raises.
+- It may be an explicit no-op, with a comment saying why (an enum value added, a small data fix). Its upgrade then runs a second time on the way back up, so it must be idempotent: `ADD VALUE IF NOT EXISTS`, `IF NOT EXISTS` DDL.
+- An irreversible migration is one whose data cannot come back, not its schema. Its `downgrade()` restores the structure without the data (a dropped column comes back nullable and empty), or is a commented no-op with an idempotent upgrade (`DROP COLUMN IF EXISTS`) when even the structure cannot come back. Its docstring says how the data is recovered: a backup restore, or rerunning the job that filled it.
+
+```python
+def upgrade() -> None:
+    op.execute("ALTER TYPE users.userstatusenum ADD VALUE IF NOT EXISTS 'ACTIVE'")
+
+
+def downgrade() -> None:
+    # An enum value cannot be dropped without recreating the enum (see "Add a value to an enum"):
+    # it stays, and the upgrade is idempotent
+    pass
+```
+
 ## Lock levels
 
 | | `ACCESS EXCLUSIVE` | `SHARE ROW EXCLUSIVE` | `SHARE UPDATE EXCLUSIVE` |
