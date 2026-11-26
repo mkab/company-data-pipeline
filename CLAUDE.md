@@ -20,14 +20,17 @@ make outdated            # list direct dependencies with a newer release
 make upgrade [PACKAGE=]  # upgrade the lock (one package or all), sync, rebuild
 make migrate             # alembic upgrade head, in the app container
 make migration MSG=      # autogenerate a migration, in the app container
+make migrations-check    # alembic check, then upgrade head, downgrade base, upgrade head, in the app container
 make lint                # ruff format --check, ruff check, mypy (no fixes), on the host
 make format              # ruff format, ruff check --fix, on the host
-make tests               # pytest -v, in the app container, against pipeline_test
-make covtest             # coverage HTML report -> htmlcov/index.html (fail_under = 96), in the app container
+make tests [ARGS=]       # pytest -v, in the app container, against pipeline_test
+make covtest [ARGS=]     # coverage HTML report -> htmlcov/index.html (fail_under = 96), in the app container
 ```
 
 Everything that touches the database runs in a container, and `make up` never starts the one-off `ingest` and `dbt` services (they sit behind Compose profiles).
 Each service connects with its own role (`ingest`, `dbt`, `api`, created by `docker/initdb` on an empty volume) through `DATABASE_URL`, and Alembic connects as the owner through `MIGRATIONS_DATABASE_URL`.
+
+CI (`.github/workflows/ci.yml`) runs the jobs `lint`, `tests` and `pr-title` on every PR, and `tests` again on the merge to `main`; the ruleset on `main` requires all three. A job renamed in the workflow is renamed in the ruleset too.
 
 The pre-commit hook runs `make format` and mypy on any commit touching Python, and the commit-msg hook (`bin/check-commit-msg.sh`) refuses a message without an allowed prefix. Never bypass them with `--no-verify`.
 
