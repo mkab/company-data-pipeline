@@ -6,6 +6,8 @@ from alembic import context
 from sqlalchemy import pool
 from sqlalchemy.ext.asyncio import create_async_engine
 
+# Imported for its side effect: declaring the tables registers them on `alembic_metadata`
+import pipeline.raw.tables  # noqa: F401
 from pipeline.database import alembic_metadata, include_managed_schemas
 from pipeline.settings import get_migration_settings
 
