@@ -20,11 +20,11 @@ Migrations are written with Alembic.
 
 ## Every migration can be downgraded
 
-`make migrations-check` (run in CI on every PR and on the merge to `main`) runs `alembic check`, then the round trip `upgrade head`, `downgrade base`, `upgrade head`. So:
+`make migrations-check` (run in CI on every PR and on the merge to `main`) runs `upgrade head`, then `alembic check`, then the round trip `downgrade base`, `upgrade head`. So:
 
-- Every migration has a `downgrade()` that runs.
-- It may be an explicit no-op, with a comment saying why (an enum value added, a data backfill). Its upgrade then runs a second time on the way back up, so it must be idempotent: `ADD VALUE IF NOT EXISTS`, `IF NOT EXISTS` DDL.
-- A downgrade that raises (a truly irreversible migration) fails the round trip by design. Its rollback plan goes in the migration docstring.
+- Every migration has a `downgrade()` that runs. A downgrade never raises.
+- It may be an explicit no-op, with a comment saying why (an enum value added, a small data fix). Its upgrade then runs a second time on the way back up, so it must be idempotent: `ADD VALUE IF NOT EXISTS`, `IF NOT EXISTS` DDL.
+- An irreversible migration is one whose data cannot come back, not its schema. Its `downgrade()` restores the structure without the data (a dropped column comes back nullable and empty), or is a commented no-op with an idempotent upgrade (`DROP COLUMN IF EXISTS`) when even the structure cannot come back. Its docstring says how the data is recovered: a backup restore, or rerunning the job that filled it.
 
 ```python
 def upgrade() -> None:
