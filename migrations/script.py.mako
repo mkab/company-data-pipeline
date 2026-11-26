@@ -1,4 +1,4 @@
-"""${message}
+"""${message[:1].upper() + message[1:]}.
 
 Revision ID: ${up_revision}
 Revises: ${down_revision | comma,n}
