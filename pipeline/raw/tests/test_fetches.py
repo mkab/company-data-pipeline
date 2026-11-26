@@ -1,3 +1,8 @@
+"""The write path runs as the ingest role, as the ingest CLI does.
+
+So these tests also prove its grants are enough.
+"""
+
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
@@ -12,7 +17,6 @@ from pipeline.raw.tests.factories import FetchedResponseFactory
 if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio import AsyncEngine
 
-# The write path runs as the ingest role, as the ingest CLI does, so these tests also prove its grants are enough
 pytestmark = pytest.mark.anyio
 
 
@@ -136,14 +140,16 @@ async def test_a_cik_is_required_for_a_company_dataset_only(
     ingest_engine: AsyncEngine, dataset: EdgarDataset, cik: int | None
 ) -> None:
     with pytest.raises(IntegrityError, match="edgar_fetches_cik_set_per_company_check"):
-        await record_fetch(ingest_engine, FetchedResponseFactory.build(), dataset=dataset, cik=cik)
+        await record_fetch(
+            ingest_engine, FetchedResponseFactory.build(status=200), dataset=dataset, cik=cik
+        )
 
 
 async def test_a_failed_fetch_insert_keeps_no_payload(ingest_engine: AsyncEngine) -> None:
-    with pytest.raises(IntegrityError):
+    with pytest.raises(IntegrityError, match="edgar_fetches_cik_set_per_company_check"):
         await record_fetch(
             ingest_engine,
-            FetchedResponseFactory.build(),
+            FetchedResponseFactory.build(status=200),
             dataset=EdgarDataset.COMPANY_TICKERS,
             cik=320193,
         )

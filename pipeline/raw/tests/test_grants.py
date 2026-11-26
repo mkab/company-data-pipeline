@@ -1,3 +1,8 @@
+"""Each role's rights on raw, as the migration grants them.
+
+ingest appends, dbt reads, api has none.
+"""
+
 from typing import TYPE_CHECKING
 
 import pytest
@@ -7,7 +12,6 @@ from sqlalchemy.exc import ProgrammingError
 if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio import AsyncEngine
 
-# Each role's rights on raw, as the migration grants them: ingest appends, dbt reads, api has none
 pytestmark = pytest.mark.anyio
 
 
