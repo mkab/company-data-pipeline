@@ -20,7 +20,7 @@ make outdated            # list direct dependencies with a newer release
 make upgrade [PACKAGE=]  # upgrade the lock (one package or all), sync, rebuild
 make migrate             # alembic upgrade head, in the app container
 make migration MSG=      # autogenerate a migration, in the app container
-make migrations-check    # alembic check, then upgrade head, downgrade base, upgrade head (empties the dev database)
+make migrations-check    # upgrade head, alembic check, downgrade base, upgrade head (empties the dev database)
 make lint                # ruff format --check, ruff check, mypy (no fixes), on the host
 make format              # ruff format, ruff check --fix, on the host
 make tests [ARGS=]       # pytest -v, in the app container, against pipeline_test
@@ -55,7 +55,7 @@ The judgement rules (backward compatibility, drops over several releases, a roll
 - **A foreign key takes three migrations**: add it `NOT VALID`, then `VALIDATE CONSTRAINT`, then create the index on the referencing column concurrently.
 - **An enum value is added with `ALTER TYPE ... ADD VALUE IF NOT EXISTS`** (`op.execute`), never by letting Alembic recreate the enum. An unused value stays deprecated rather than dropped; the rare real drop follows the new-column recipe in the doc.
 - **A column is made not null in two migrations**: `ADD CONSTRAINT <name> NOT NULL <column> NOT VALID`, then `VALIDATE CONSTRAINT`. Never `SET NOT NULL` on an existing table.
-- **Every migration has a `downgrade()` that runs**: `make migrations-check` (in CI) round-trips them. A no-op downgrade says why in a comment, and its upgrade is then idempotent.
+- **Every migration has a `downgrade()` that runs**: `make migrations-check` (in CI) round-trips them. A downgrade never raises: an irreversible one restores the structure (or is a commented no-op with an idempotent upgrade) and its docstring says how the data is recovered.
 - **Lint every migration with Squawk.**
 
 ## Git workflow
