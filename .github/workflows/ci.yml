@@ -1,0 +1,89 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+  # The squash merge: nothing is ever pushed to main directly
+  push:
+    branches: [main]
+
+# A new commit on the same ref cancels the run still going
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+# The job names are the required checks of the ruleset on main: rename them together
+jobs:
+  lint:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # uv installs the Python version in .python-version
+      - uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d # v10.4.0
+        with:
+          enable-cache: true
+
+      - run: uv sync --locked
+
+      - run: make lint
+
+  tests:
+    runs-on: ubuntu-latest
+    env:
+      # Fixes the image name, so Compose finds the image bake built instead of building its own
+      COMPOSE_PROJECT_NAME: company-data-pipeline
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # EDGAR_USER_AGENT stays empty: no test calls SEC
+      - run: cp .env.example .env
+
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      - name: Build the app image
+        uses: docker/bake-action@59cb1203cd42bcefd40a1b6d73b589e48c86040e # v7.5.0
+        with:
+          source: .
+          files: docker-compose.yml
+          targets: api
+          load: true
+          set: |
+            api.tags=company-data-pipeline-api
+            api.cache-from=type=gha,scope=app
+            api.cache-to=type=gha,scope=app,mode=max
+
+      - run: docker compose up --detach --wait db
+
+      - run: make migrate
+
+      - run: make migrations-check
+
+      # A test with no cassette fails instead of calling the network
+      - run: make covtest ARGS="--record-mode=none --block-network"
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: ${{ !cancelled() }}
+        with:
+          name: htmlcov
+          path: htmlcov/
+          retention-days: 7
+
+  # The squash merge makes the PR title the commit message on main
+  pr-title:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # The title reaches the script through the environment, never spliced into the shell
+      - env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          printf '%s\n' "$PR_TITLE" > "$RUNNER_TEMP/pr-title"
+          bin/check-commit-msg.sh "$RUNNER_TEMP/pr-title"
