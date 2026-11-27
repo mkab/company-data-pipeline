@@ -29,6 +29,7 @@ async def seed_raw(fetches: list[SeedFetch], *, fixtures_dir: Path) -> None:
     """Record each fetch through the ingest write path, as if EDGAR had answered it now.
 
     Each fetch's `file` is read from `fixtures_dir`, and every fetch gets the same `fetched_at`.
+    Each fetch is recorded in its own transaction, as the ingest run records them.
     A second seed adds fetches pointing at the same payloads,
     so the latest fetch of each dataset and company still reads the same body.
     """

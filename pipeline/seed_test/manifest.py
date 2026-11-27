@@ -12,7 +12,7 @@ class SeedFetch(BaseModel):
     """One fetch to record, with the fixture file holding its body.
 
     `cik` is `None` for the tickers file.
-    `file` is relative to the manifest's directory,
+    `file` is relative to the fixtures directory the seed reads from,
     and `None` for a 404, the one fetch recorded with no body.
     """
 
@@ -22,7 +22,7 @@ class SeedFetch(BaseModel):
     file: Path | None = None
 
     @model_validator(mode="after")
-    def refuse_a_body_on_a_404_only(self) -> Self:
+    def require_a_body_unless_404(self) -> Self:
         is_not_found = self.http_status == HTTPStatus.NOT_FOUND
         if is_not_found and self.file is not None:
             raise ValueError("A 404 fetch has no body file")
