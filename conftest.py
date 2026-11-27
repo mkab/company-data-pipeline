@@ -6,10 +6,12 @@ from alembic import command
 from alembic.config import Config
 from sqlalchemy import make_url
 
+from pipeline.database import get_engine, get_sessionmaker
 from pipeline.settings import get_migration_settings, get_settings
+from pipeline.tests.roles import empty_raw_tables, role_database_url
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator
+    from collections.abc import AsyncIterator, Iterator
 
 # Created by docker/initdb next to the development database
 TEST_DATABASE_NAME = "pipeline_test"
@@ -25,6 +27,12 @@ def with_test_database_name(url: str) -> str:
 def clear_settings_caches() -> None:
     get_settings.cache_clear()
     get_migration_settings.cache_clear()
+
+
+def clear_database_caches() -> None:
+    get_settings.cache_clear()
+    get_engine.cache_clear()
+    get_sessionmaker.cache_clear()
 
 
 @pytest.fixture
@@ -54,3 +62,18 @@ def point_settings_at_test_database() -> Iterator[None]:
 def migrated_test_database(point_settings_at_test_database: None) -> None:
     """Bring the test database to the latest migration, once per session."""
     command.upgrade(Config(ALEMBIC_CONFIG_PATH), "head")
+
+
+@pytest.fixture
+async def database_url_as_ingest(monkeypatch: pytest.MonkeyPatch) -> AsyncIterator[None]:
+    """Point `DATABASE_URL`, and so `session_scope`, at the ingest role, which can write raw.
+
+    Shared by the tests of `session_scope` and of the ingest run, which opens it per fetch.
+    Each test runs on its own event loop, so the cached engine is disposed of after it.
+    """
+    monkeypatch.setenv("DATABASE_URL", role_database_url("ingest"))
+    clear_database_caches()
+    yield
+    await get_engine().dispose()
+    clear_database_caches()
+    await empty_raw_tables()
