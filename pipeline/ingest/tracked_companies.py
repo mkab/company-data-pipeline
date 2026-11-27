@@ -10,7 +10,8 @@ if TYPE_CHECKING:
 class TrackedCompany(BaseModel):
     """A company the ingest run fetches submissions and company facts for.
 
-    `name` is there for whoever reads the file: the CIK alone identifies the company.
+    `name` is there for whoever reads the file:
+    the CIK alone identifies the company.
     """
 
     cik: int = Field(gt=0)

@@ -1,5 +1,7 @@
 # The companies the ingest run fetches submissions and company facts for.
-# Each is keyed by its CIK, which identifies it: the name is only there for readability.
+# Each is keyed by its CIK,
+# which identifies it:
+# the name is only there for readability.
 # The CIKs come from SEC's company_tickers_exchange.json (fetched 2026-11-27).
 #
 # Edge cases the dbt fixtures rely on (keep them listed):

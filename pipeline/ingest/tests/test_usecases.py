@@ -17,6 +17,9 @@ if TYPE_CHECKING:
 
 pytestmark = [pytest.mark.anyio, pytest.mark.usefixtures("database_url_as_ingest")]
 
+# Refused, unavailable once the retries are spent, and a body that is not the envelope
+FAILING_RESPONSES = [(403, b"<html>Forbidden</html>"), (503, b""), (200, b'{"cik": "0000320193"}')]
+
 
 async def recorded_fetches() -> list[tuple[EdgarDataset, int | None, int, bool]]:
     """Return each fetch as (dataset, CIK, HTTP status, has a payload), in a fixed order."""
@@ -72,10 +75,6 @@ async def test_a_run_where_every_fetch_is_recorded_reports_no_failure(
         failed_fetches = await run_ingest(edgar, tracked_companies)
 
     assert failed_fetches == []
-
-
-# Refused, unavailable once the retries are spent, and a body that is not the envelope
-FAILING_RESPONSES = [(403, b"<html>Forbidden</html>"), (503, b""), (200, b'{"cik": "0000320193"}')]
 
 
 @pytest.mark.parametrize(("status", "body"), FAILING_RESPONSES)

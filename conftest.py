@@ -68,7 +68,8 @@ def migrated_test_database(point_settings_at_test_database: None) -> None:
 async def database_url_as_ingest(monkeypatch: pytest.MonkeyPatch) -> AsyncIterator[None]:
     """Point `DATABASE_URL`, and so `session_scope`, at the ingest role, which can write raw.
 
-    Shared by the tests of `session_scope` and of the ingest run, which opens it per fetch.
+    Shared by the tests of `session_scope` and of the ingest run,
+    which opens it per fetch.
     Each test runs on its own event loop, so the cached engine is disposed of after it.
     """
     monkeypatch.setenv("DATABASE_URL", role_database_url("ingest"))

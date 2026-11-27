@@ -10,6 +10,10 @@ if TYPE_CHECKING:
     from pathlib import Path
 
 
+def tracked_ciks(tracked_companies: list[TrackedCompany]) -> list[int]:
+    return [company.cik for company in tracked_companies]
+
+
 def test_tracked_companies_are_read_from_the_toml_file(tmp_path: Path) -> None:
     path = tmp_path / "tracked_companies.toml"
     path.write_text(
@@ -48,7 +52,9 @@ def test_a_duplicate_cik_is_refused(tmp_path: Path) -> None:
     ],
 )
 def test_the_committed_file_tracks_each_edge_case(cik: int) -> None:
-    """The dbt fixtures rely on these, so dropping one breaks them."""
-    ciks = [company.cik for company in load_tracked_companies(TRACKED_COMPANIES_PATH)]
+    """The dbt fixtures rely on these,
+    so dropping one breaks them.
+    """
+    tracked_companies = load_tracked_companies(TRACKED_COMPANIES_PATH)
 
-    assert cik in ciks
+    assert cik in tracked_ciks(tracked_companies)

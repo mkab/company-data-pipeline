@@ -32,7 +32,8 @@ async def ingest(edgar: EdgarClient, tracked_companies: list[TrackedCompany]) ->
         async with edgar:
             failed_fetches = await run_ingest(edgar, tracked_companies)
     finally:
-        # The run created the engine, so it closes its connections before the event loop ends
+        # The run created the engine,
+        # so it closes its connections before the event loop ends
         await get_engine().dispose()
     if failed_fetches:
         logger.error("Ingest finished with %d failed fetches", len(failed_fetches))
