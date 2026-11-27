@@ -1,0 +1,15 @@
+sources:
+  - name: raw
+    description: Every EDGAR fetch, appended by the ingest run, with the payloads as received.
+    schema: raw
+    tables:
+      - name: edgar_fetches
+        description: One row per fetch, never updated. `cik` is null for the tickers file, and `payload_id` for a 404.
+        config:
+          loaded_at_field: fetched_at
+          # Checked by `make dbt ARGS="source freshness"`, by hand in dev only, never in CI
+          freshness:
+            warn_after: {count: 2, period: day}
+            error_after: {count: 7, period: day}
+      - name: edgar_payloads
+        description: One row per distinct body, shared by the fetches that returned it.

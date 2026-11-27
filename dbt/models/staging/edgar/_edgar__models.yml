@@ -1,0 +1,131 @@
+# Staging reshapes one EDGAR dataset each, from the latest fetch of each company:
+# flatten, rename and cast, with no business rules.
+# Only the keys are tested here: the rules, and their tests, are in curated
+models:
+  - name: stg_edgar__company_tickers
+    description: One row per ticker in the latest tickers file, which lists every company with a ticker.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [cik, ticker]
+    columns:
+      - name: cik
+        description: The company's CIK.
+        data_tests: [not_null]
+      - name: name
+        description: The company's name, as the tickers file spells it.
+      - name: ticker
+        description: The ticker.
+        data_tests: [not_null]
+      - name: exchange
+        description: The exchange the ticker trades on, null when the file names none.
+
+  - name: stg_edgar__submissions
+    description: One row per company with submissions, from its latest submissions fetch.
+    columns:
+      - name: cik
+        description: The company's CIK.
+        data_tests: [not_null, unique]
+      - name: name
+        description: The company's current name.
+      - name: entity_type
+        description: EDGAR's kind of filer, such as `operating`.
+      - name: sic
+        description: The Standard Industrial Classification code, as text.
+      - name: sic_description
+        description: The industry the SIC code names.
+      - name: fiscal_year_end
+        description: The month and day the fiscal year ends, as `MMDD`.
+      - name: state_of_incorporation
+        description: The state or country code of incorporation.
+
+  - name: stg_edgar__filings
+    description: >
+      One row per filing in `filings.recent` of each company's latest submissions,
+      which holds the latest thousand filings or the last year of them.
+      Co-registrants share an accession number, so a filing is a company and an accession number.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [cik, accession_number]
+    columns:
+      - name: cik
+        description: The filing company's CIK.
+        data_tests: [not_null]
+      - name: accession_number
+        description: The SEC's identifier of the filing.
+        data_tests: [not_null]
+      - name: form
+        description: The form type, such as `10-K`, `20-F` or `8-K`.
+      - name: core_type
+        description: "EDGAR's `core_type`: the form type, or `XBRL` for a filing with XBRL financial data."
+      - name: filing_date
+        description: The day the filing was filed.
+      - name: report_date
+        description: The period the filing reports on, null when it reports on none.
+      - name: accepted_at
+        description: When EDGAR accepted the filing.
+      - name: act
+        description: The securities act the filing is made under.
+      - name: file_number
+        description: The SEC file number.
+      - name: film_number
+        description: The SEC film number.
+      - name: items
+        description: The items an 8-K reports, comma separated.
+      - name: size
+        description: The filing's size in bytes.
+      - name: is_xbrl
+        description: Whether the filing carries XBRL.
+      - name: is_inline_xbrl
+        description: Whether the filing carries inline XBRL.
+      - name: is_xbrl_numeric
+        description: Whether the filing's XBRL holds numeric facts.
+      - name: primary_document
+        description: The file name of the filing's main document.
+      - name: primary_document_description
+        description: EDGAR's description of the main document.
+
+  - name: stg_edgar__fact_reports
+    description: >
+      One row per fact report in each company's latest company facts, every taxonomy included.
+      A fact is usually reported by several filings, and every report is kept:
+      curated picks the fact.
+      A company whose latest company facts fetch found nothing has no rows.
+    columns:
+      - name: cik
+        description: The reporting company's CIK.
+        data_tests: [not_null]
+      - name: taxonomy
+        description: The taxonomy of the concept, such as `us-gaap`, `ifrs-full` or `dei`.
+        data_tests: [not_null]
+      - name: concept
+        description: The concept the value is tagged with, such as `Revenues`.
+        data_tests: [not_null]
+      - name: label
+        description: The concept's label, null when EDGAR gives none.
+      - name: description
+        description: The concept's description, null when EDGAR gives none.
+      - name: unit
+        description: The unit of the value, such as `USD`, `shares` or `USD/shares`.
+        data_tests: [not_null]
+      - name: period_start
+        description: The first day of the period, null for an instant fact (a value at a date).
+      - name: period_end
+        description: The last day of the period, or the date of an instant fact.
+        data_tests: [not_null]
+      - name: value
+        description: The value reported.
+      - name: accession_number
+        description: The accession number of the reporting filing.
+        data_tests: [not_null]
+      - name: fiscal_year
+        description: The fiscal year of the reporting filing, not of the period.
+      - name: fiscal_period
+        description: The fiscal period of the reporting filing (`FY`, `Q1` and so on), not of the period.
+      - name: form
+        description: The form type of the reporting filing.
+      - name: filed
+        description: The day the reporting filing was filed.
+      - name: frame
+        description: The calendar frame EDGAR aligns the fact to, such as `CY2024Q4I`, null when it aligns none.
