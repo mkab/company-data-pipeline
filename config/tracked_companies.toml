@@ -1,0 +1,129 @@
+# The companies the ingest run fetches submissions and company facts for.
+# Each is keyed by its CIK,
+# which identifies it:
+# the name is only there for readability.
+# The CIKs come from SEC's company_tickers_exchange.json (fetched 2026-11-27).
+#
+# Edge cases the dbt fixtures rely on (keep them listed):
+# - a foreign private issuer, filing 20-F with `ifrs-full` facts: Novo Nordisk (353278)
+# - a company with several tickers: JPMorgan Chase (19617, its preferred shares)
+# - a company with share classes: Berkshire Hathaway (1067983, BRK-A and BRK-B)
+# - a company with no company facts (404): Generation Essentials Group (2053456)
+
+# Information technology
+
+[[companies]]
+cik = 320193
+name = "Apple Inc."
+
+[[companies]]
+cik = 789019
+name = "Microsoft Corp"
+
+[[companies]]
+cik = 1045810
+name = "NVIDIA Corp"
+
+# Communication services
+
+[[companies]]
+cik = 1652044
+name = "Alphabet Inc."
+
+[[companies]]
+cik = 1065280
+name = "Netflix Inc"
+
+# Consumer
+
+[[companies]]
+cik = 1018724
+name = "Amazon.com Inc"
+
+[[companies]]
+cik = 104169
+name = "Walmart Inc."
+
+[[companies]]
+cik = 21344
+name = "Coca-Cola Co"
+
+[[companies]]
+cik = 80424
+name = "Procter & Gamble Co"
+
+[[companies]]
+cik = 354950
+name = "Home Depot, Inc."
+
+# Financials
+
+[[companies]]
+cik = 19617
+name = "JPMorgan Chase & Co"
+
+[[companies]]
+cik = 1067983
+name = "Berkshire Hathaway Inc"
+
+[[companies]]
+cik = 1403161
+name = "Visa Inc."
+
+# Health care
+
+[[companies]]
+cik = 200406
+name = "Johnson & Johnson"
+
+[[companies]]
+cik = 78003
+name = "Pfizer Inc"
+
+[[companies]]
+cik = 731766
+name = "UnitedHealth Group Inc"
+
+[[companies]]
+cik = 353278
+name = "Novo Nordisk A/S"
+
+# Industrials
+
+[[companies]]
+cik = 18230
+name = "Caterpillar Inc"
+
+[[companies]]
+cik = 12927
+name = "Boeing Co"
+
+# Energy and utilities
+
+[[companies]]
+cik = 93410
+name = "Chevron Corp"
+
+[[companies]]
+cik = 753308
+name = "NextEra Energy Inc"
+
+# Real estate and materials
+
+[[companies]]
+cik = 1045609
+name = "Prologis, Inc."
+
+[[companies]]
+cik = 1707925
+name = "Linde plc"
+
+# Small and unusual filers
+
+[[companies]]
+cik = 2093536
+name = "Arxis, Inc."
+
+[[companies]]
+cik = 2053456
+name = "Generation Essentials Group"

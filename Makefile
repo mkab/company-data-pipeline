@@ -19,6 +19,8 @@ help:
 	@echo "  migration      	autogenerate a migration file (MSG=<message> is required)"
 	@echo "  migrations-check	run the migrations up, check none is missing, then down to base and up again"
 	@echo "                 	(the downgrade empties the development database)"
+	@echo "  ingest         	fetch the tickers file and every tracked company's datasets from SEC EDGAR into raw"
+	@echo "                 	(EDGAR_USER_AGENT is required in .env)"
 	@echo "  lint           	run the code linters, without fixing anything (lint-migrations included)"
 	@echo "  lint-migrations	lint the SQL of every migration revision with Squawk"
 	@echo "  format         	reformat code and apply the safe lint fixes"
@@ -84,6 +86,11 @@ migrations-check:
 	@# `alembic check` fails when the models differ from the migrations (a migration is missing), and needs the database at head.
 	@# The round trip fails when a downgrade raises or an upgrade cannot run twice (see docs/migrations.md)
 	$(APP_RUN) sh -c "alembic upgrade head && alembic check && alembic downgrade base && alembic upgrade head"
+
+.PHONY: ingest
+ingest:
+	@# The `ingest` service connects as the ingest role, the one that may write raw
+	docker compose run --rm ingest python -m pipeline.ingest
 
 .PHONY: lint
 lint:

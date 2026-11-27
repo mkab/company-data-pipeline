@@ -13,7 +13,7 @@ Code is split into four layers, each calling only the one below it:
 
 ```text
 router      parses the request, builds the response            (FastAPI, gets the layers below through Depends)
-usecase     one application action that coordinates services  (only when there is more than one service)
+usecase     one application action that coordinates services  (only when there is more than one service, or a source and a service)
 service     the business rules of one area                    (calls repository Protocols)
 repository  reads and writes the database, nothing else       (no business rules or logic)
 ```
