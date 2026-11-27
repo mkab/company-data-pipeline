@@ -146,8 +146,8 @@ models:
   - name: facts
     description: >
       One row per fact: a tracked company's value for one concept, unit and period, every taxonomy included.
-      A fact is usually reported by several filings; the latest filed report states it,
-      and on a tie on `filed` the highest accession number.
+      A fact is usually reported by several filings.
+      The latest filed report states it, and on a tie on `filed` the highest accession number.
       The other columns describe that winning report.
       A company with no company facts has no rows.
       There is no relationship to `filings`: facts go back to 2009,

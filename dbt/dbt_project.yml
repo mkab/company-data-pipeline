@@ -26,7 +26,8 @@ models:
       +grants:
         select: [api]
 
-# Model grants cover the tables; reading them also needs usage on the schema
+# Model grants cover the tables.
+# Reading them also needs usage on the schema
 on-run-end:
   - "{{ grant_curated_schema_usage() }}"
 

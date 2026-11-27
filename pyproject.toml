@@ -55,7 +55,8 @@ exclude_lines = [
     "raise NotImplementedError",
     "def __str__",
     "# pragma: no cover",
-    # A CLI's entrypoint guard runs only under `python -m`; its `main()` is tested
+    # A CLI's entrypoint guard runs only under `python -m`.
+    # Its `main()` is tested
     'if __name__ == "__main__":',
 ]
 fail_under = 100
