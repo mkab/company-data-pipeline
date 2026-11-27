@@ -18,7 +18,7 @@ help:
 	@echo "  migrate        	apply the migrations (alembic upgrade head)"
 	@echo "  migration      	autogenerate a migration file (MSG=<message> is required)"
 	@echo "  migrations-check	run the migrations up, check none is missing, then down to base and up again"
-	@echo "                 	(the downgrade empties the development database)"
+	@echo "                 	(the downgrade empties the development database, and drops dbt's staging and curated)"
 	@echo "  ingest         	fetch the tickers file and every tracked company's datasets from SEC EDGAR into raw"
 	@echo "                 	(EDGAR_USER_AGENT is required in .env)"
 	@echo "  seed-test      	migrate the test database and load the committed EDGAR fixtures into its raw tables"
@@ -89,7 +89,9 @@ migration:
 .PHONY: migrations-check
 migrations-check:
 	@# `alembic check` fails when the models differ from the migrations (a migration is missing), and needs the database at head.
-	@# The round trip fails when a downgrade raises or an upgrade cannot run twice (see docs/migrations.md)
+	@# The round trip fails when a downgrade raises or an upgrade cannot run twice (see docs/migrations.md).
+	@# dbt's views over raw would block the downgrade, so its schemas go first (`make dbt` rebuilds them)
+	docker compose exec -T db sh -c 'psql --username "$$POSTGRES_USER" --dbname "$$POSTGRES_DB" --command "DROP SCHEMA IF EXISTS staging, curated CASCADE"'
 	$(APP_RUN) sh -c "alembic upgrade head && alembic check && alembic downgrade base && alembic upgrade head"
 
 .PHONY: ingest
