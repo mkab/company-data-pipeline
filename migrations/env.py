@@ -17,7 +17,8 @@ if TYPE_CHECKING:
 config = context.config
 
 if config.config_file_name is not None:
-    fileConfig(config.config_file_name)
+    # Keeps the loggers of modules imported before Alembic runs (as in the tests) working
+    fileConfig(config.config_file_name, disable_existing_loggers=False)
 
 
 # Shared by the offline and online runs.

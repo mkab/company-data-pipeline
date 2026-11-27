@@ -25,6 +25,7 @@ help:
 	@echo "  tests          	run all the tests (ARGS=<pytest options> are passed on)"
 	@echo "  covtest        	run all the tests with coverage in HTML mode. The coverage can be viewed in the file htmlcov/index.html"
 	@echo "                 	(ARGS=<pytest options> are passed on)"
+	@echo "  record-cassettes	re-record the EDGAR cassettes against the real SEC (EDGAR_USER_AGENT is required in .env)"
 	@echo ""
 	@echo "Check the Makefile to know exactly what each target is doing."
 
@@ -108,3 +109,9 @@ tests:
 .PHONY: covtest
 covtest:
 	$(APP_RUN) pytest -v --cov --cov-report=html $(ARGS)
+
+.PHONY: record-cassettes
+record-cassettes:
+	@# Calls SEC EDGAR for real,
+	@# so it is run by hand and never in CI
+	$(APP_RUN) sh -c 'test -n "$$EDGAR_USER_AGENT" || { echo "EDGAR_USER_AGENT is required in .env"; exit 1; }; pytest -v -m vcr --record-mode=rewrite pipeline/sources/edgar'
