@@ -11,6 +11,7 @@ from pipeline.sources.edgar.client import (
 from pipeline.sources.http import SourceClient, SourceRefusedError
 
 TICKERS_FIXTURE = Path(__file__).parent / "fixtures" / "company_tickers_exchange.json"
+CASSETTES = Path(__file__).parent / "cassettes" / "test_client"
 
 
 class FixedSource:
@@ -106,3 +107,55 @@ async def test_a_company_facts_refusal_other_than_404_is_raised() -> None:
     async with make_edgar(source) as edgar:
         with pytest.raises(SourceRefusedError, match="status 403"):
             await edgar.get_company_facts(320193)
+
+
+# Arxis, Inc.: a recent IPO, so among the smallest companyfacts a listed filer has
+SMALL_FILER_CIK = 2093536
+# Generation Essentials Group: listed on NYSE, but SEC has no XBRL facts for it
+NO_FACTS_CIK = 2053456
+
+
+@pytest.mark.vcr
+@pytest.mark.anyio
+async def test_a_small_filers_submissions_come_back_as_received(edgar: EdgarClient) -> None:
+    async with edgar:
+        response = await edgar.get_submissions(SMALL_FILER_CIK)
+
+    assert response.url == "https://data.sec.gov/submissions/CIK0002093536.json"
+    assert response.status == 200
+    assert response.body.startswith(b'{"cik":"0002093536","entityType":"operating"')
+
+
+@pytest.mark.vcr
+@pytest.mark.anyio
+async def test_a_small_filers_company_facts_come_back_as_received(edgar: EdgarClient) -> None:
+    async with edgar:
+        response = await edgar.get_company_facts(SMALL_FILER_CIK)
+
+    assert response.url == "https://data.sec.gov/api/xbrl/companyfacts/CIK0002093536.json"
+    assert response.status == 200
+    assert response.body.startswith(b'{"cik":"0002093536","entityName":"ARXIS, INC."')
+
+
+@pytest.mark.vcr
+@pytest.mark.anyio
+async def test_a_company_with_no_facts_comes_back_as_its_404(edgar: EdgarClient) -> None:
+    async with edgar:
+        response = await edgar.get_company_facts(NO_FACTS_CIK)
+
+    assert response.url == "https://data.sec.gov/api/xbrl/companyfacts/CIK0002053456.json"
+    assert response.status == 404
+
+
+@pytest.mark.parametrize(
+    "cassette",
+    [
+        "test_a_small_filers_submissions_come_back_as_received.yaml",
+        "test_a_small_filers_company_facts_come_back_as_received.yaml",
+        "test_a_company_with_no_facts_comes_back_as_its_404.yaml",
+    ],
+)
+def test_no_cassette_holds_a_user_agent(cassette: str) -> None:
+    text = (CASSETTES / cassette).read_text()
+
+    assert "user-agent" not in text.lower()

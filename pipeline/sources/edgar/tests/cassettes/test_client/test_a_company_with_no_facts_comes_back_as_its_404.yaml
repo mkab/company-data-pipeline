@@ -1,0 +1,40 @@
+interactions:
+- request:
+    body: ''
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate, zstd
+      connection:
+      - keep-alive
+      host:
+      - data.sec.gov
+    method: GET
+    uri: https://data.sec.gov/api/xbrl/companyfacts/CIK0002053456.json
+  response:
+    body:
+      string: '<?xml version="1.0" encoding="UTF-8"?>
+
+        <Error><Code>NoSuchKey</Code><Message>The specified key does not exist.</Message><Key>api/xbrl/companyfacts/CIK0002053456.json</Key><RequestId>PXRP1VX44T78EZKH</RequestId><HostId>yeyA8PeIXsjdhTDP8MU2T+RjR5OBQvxs76Q4QYNCJS5g3GoaJGtjm+8xjZXOynDuS+YLd6XxrhE=</HostId></Error>'
+    headers:
+      connection:
+      - keep-alive
+      content-length:
+      - '311'
+      content-type:
+      - application/xml
+      date:
+      - Fri, 27 Nov 2026 06:54:57 GMT
+      strict-transport-security:
+      - max-age=31536000 ; preload
+      x-amz-apigw-id:
+      - HfNiQH5FoAMEn0A=
+      x-amzn-requestid:
+      - 230c0dae-b442-4ac8-97ad-dada84a94fd7
+      x-amzn-trace-id:
+      - Root=1-6b092941-633ab326f6ba1cfbcb7619cd
+    status:
+      code: 404
+      message: Not Found
+version: 1
