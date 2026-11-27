@@ -1,0 +1,163 @@
+{
+  "cik": "0002053456",
+  "ein": "000000000",
+  "lei": null,
+  "sic": "7011",
+  "name": "Generation Essentials Group",
+  "flags": "",
+  "phone": "330142364597",
+  "filings": {
+    "files": [],
+    "recent": {
+      "act": [
+        "34",
+        "34",
+        "34",
+        "34"
+      ],
+      "form": [
+        "6-K",
+        "SCHEDULE 13D",
+        "6-K",
+        "20-F"
+      ],
+      "size": [
+        68263,
+        87371,
+        66572,
+        16382293
+      ],
+      "items": [
+        "",
+        "",
+        "",
+        ""
+      ],
+      "isXBRL": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "core_type": [
+        "6-K",
+        "SCHEDULE 13D",
+        "6-K",
+        "XBRL"
+      ],
+      "fileNumber": [
+        "001-42686",
+        "005-95182",
+        "001-42686",
+        "001-42686"
+      ],
+      "filingDate": [
+        "2026-11-09",
+        "2026-11-06",
+        "2026-11-06",
+        "2026-04-29"
+      ],
+      "filmNumber": [
+        "261536144",
+        "261533336",
+        "261532987",
+        "26916744"
+      ],
+      "reportDate": [
+        "2026-11-09",
+        "",
+        "2026-11-06",
+        "2025-12-31"
+      ],
+      "isInlineXBRL": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "isXBRLNumeric": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "accessionNumber": [
+        "0001213900-26-117527",
+        "0001213900-26-117049",
+        "0001213900-26-116996",
+        "0001213900-26-049334"
+      ],
+      "primaryDocument": [
+        "ea0311449-6k_generation.htm",
+        "xslSCHEDULE_13D_X02/primary_doc.xml",
+        "ea031123103-6k_generation.htm",
+        "ea0285525-20f_generation.htm"
+      ],
+      "acceptanceDateTime": [
+        "2026-11-09T21:15:17.000Z",
+        "2026-11-06T23:43:39.000Z",
+        "2026-11-06T22:14:33.000Z",
+        "2026-04-29T20:30:30.000Z"
+      ],
+      "primaryDocDescription": [
+        "REPORT OF FOREIGN PRIVATE ISSUER",
+        "",
+        "REPORT OF FOREIGN PRIVATE ISSUER",
+        "ANNUAL REPORT"
+      ]
+    }
+  },
+  "tickers": [
+    "TGE",
+    "TGE-WT"
+  ],
+  "website": "",
+  "category": "Accelerated filer<br>Emerging growth company",
+  "ownerOrg": "05 Real Estate & Construction",
+  "addresses": {
+    "mailing": {
+      "city": "GEORGE TOWN",
+      "country": null,
+      "street1": "PO BOX 2681, HUTCHINS DRIVE",
+      "street2": "CRICKET SQUARE, GRAND CAYMAN",
+      "zipCode": "KY1-1111",
+      "countryCode": null,
+      "stateOrCountry": "E9",
+      "isForeignLocation": 0,
+      "foreignStateTerritory": null,
+      "stateOrCountryDescription": "Cayman Islands"
+    },
+    "business": {
+      "city": "GEORGE TOWN",
+      "country": null,
+      "street1": "PO BOX 2681, HUTCHINS DRIVE",
+      "street2": "CRICKET SQUARE, GRAND CAYMAN",
+      "zipCode": "KY1-1111",
+      "countryCode": null,
+      "stateOrCountry": "E9",
+      "isForeignLocation": null,
+      "foreignStateTerritory": null,
+      "stateOrCountryDescription": "Cayman Islands"
+    }
+  },
+  "exchanges": [
+    "NYSE",
+    "NYSE"
+  ],
+  "entityType": "other",
+  "description": "",
+  "formerNames": [
+    {
+      "to": "2025-02-19T05:00:00.000Z",
+      "from": "2025-01-27T05:00:00.000Z",
+      "name": "World Media & Entertainment Universal Inc."
+    }
+  ],
+  "fiscalYearEnd": "1231",
+  "sicDescription": "Hotels & Motels",
+  "investorWebsite": "",
+  "stateOfIncorporation": "E9",
+  "stateOfIncorporationDescription": "Cayman Islands",
+  "insiderTransactionForOwnerExists": 1,
+  "insiderTransactionForIssuerExists": 1
+}

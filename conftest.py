@@ -1,3 +1,4 @@
+import asyncio
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -60,8 +61,13 @@ def point_settings_at_test_database() -> Iterator[None]:
 
 @pytest.fixture(scope="session", autouse=True)
 def migrated_test_database(point_settings_at_test_database: None) -> None:
-    """Bring the test database to the latest migration, once per session."""
+    """Bring the test database to the latest migration with empty raw tables, once per session.
+
+    `make seed-test` fills the same raw tables for dbt,
+    so a test never starts on its rows.
+    """
     command.upgrade(Config(ALEMBIC_CONFIG_PATH), "head")
+    asyncio.run(empty_raw_tables())
 
 
 @pytest.fixture

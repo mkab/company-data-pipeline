@@ -74,6 +74,45 @@ jobs:
           path: htmlcov/
           retention-days: 7
 
+  dbt:
+    runs-on: ubuntu-latest
+    env:
+      # Same project name as `tests`, so Compose finds the images bake built
+      COMPOSE_PROJECT_NAME: company-data-pipeline
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - run: cp .env.example .env
+
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      # `make migrate` runs in `api` and `make seed-test` in `seed-test`, both the app image:
+      # they read the cache `tests` writes, and only the dbt image writes its own
+      - name: Build the app and dbt images
+        uses: docker/bake-action@59cb1203cd42bcefd40a1b6d73b589e48c86040e # v7.5.0
+        with:
+          source: .
+          files: docker-compose.yml
+          targets: api,seed-test,dbt
+          load: true
+          set: |
+            api.tags=company-data-pipeline-api
+            api.cache-from=type=gha,scope=app
+            seed-test.tags=company-data-pipeline-seed-test
+            seed-test.cache-from=type=gha,scope=app
+            dbt.tags=company-data-pipeline-dbt
+            dbt.cache-from=type=gha,scope=dbt
+            dbt.cache-to=type=gha,scope=dbt,mode=max
+
+      - run: docker compose up --detach --wait db
+
+      - run: make migrate
+
+      # No source freshness here: the fixtures' fetches are as old as the seed, and CI never calls SEC
+      - run: make seed-test
+
+      - run: make dbt ARGS="build --target test"
+
   # The squash merge makes the PR title the commit message on main
   pr-title:
     if: github.event_name == 'pull_request'

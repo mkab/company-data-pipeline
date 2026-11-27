@@ -1,0 +1,20 @@
+# Committed: every connection value comes from the environment,
+# which the `dbt` service gets from `.env` and docker-compose.yml.
+# dbt connects as the `dbt` role, which reads raw and owns staging and curated
+company_data_pipeline:
+  target: dev
+  outputs:
+    dev: &connection
+      type: postgres
+      host: "{{ env_var('DBT_DB_HOST') }}"
+      port: "{{ env_var('DBT_DB_PORT') | as_number }}"
+      user: "{{ env_var('DBT_DB_USER') }}"
+      password: "{{ env_var('DBT_DB_PASSWORD') }}"
+      dbname: "{{ env_var('POSTGRES_DB') }}"
+      # The schema of a model with no `schema` config, which every model has
+      schema: staging
+      threads: 4
+    # The database `make tests` and `make seed-test` use, created by docker/initdb
+    test:
+      <<: *connection
+      dbname: pipeline_test

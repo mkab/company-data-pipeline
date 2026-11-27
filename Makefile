@@ -18,9 +18,14 @@ help:
 	@echo "  migrate        	apply the migrations (alembic upgrade head)"
 	@echo "  migration      	autogenerate a migration file (MSG=<message> is required)"
 	@echo "  migrations-check	run the migrations up, check none is missing, then down to base and up again"
-	@echo "                 	(the downgrade empties the development database)"
+	@echo "                 	(the downgrade empties the development database, and drops dbt's staging and curated)"
 	@echo "  ingest         	fetch the tickers file and every tracked company's datasets from SEC EDGAR into raw"
 	@echo "                 	(EDGAR_USER_AGENT is required in .env)"
+	@echo "  seed-test      	migrate the test database and load the committed EDGAR fixtures into its raw tables"
+	@echo "                 	(\`make tests\` empties them again)"
+	@echo "  dbt            	run dbt in its container (ARGS=<dbt command and options>, build by default)"
+	@echo "                 	(ARGS=\"build --target test\" builds against the test database, after seed-test)"
+	@echo "  pipeline       	ingest, then dbt build"
 	@echo "  lint           	run the code linters, without fixing anything (lint-migrations included)"
 	@echo "  lint-migrations	lint the SQL of every migration revision with Squawk"
 	@echo "  format         	reformat code and apply the safe lint fixes"
@@ -84,13 +89,31 @@ migration:
 .PHONY: migrations-check
 migrations-check:
 	@# `alembic check` fails when the models differ from the migrations (a migration is missing), and needs the database at head.
-	@# The round trip fails when a downgrade raises or an upgrade cannot run twice (see docs/migrations.md)
+	@# The round trip fails when a downgrade raises or an upgrade cannot run twice (see docs/migrations.md).
+	@# dbt's views over raw would block the downgrade, so its schemas go first (`make dbt` rebuilds them)
+	docker compose exec -T db sh -c 'psql --username "$$POSTGRES_USER" --dbname "$$POSTGRES_DB" --command "DROP SCHEMA IF EXISTS staging, curated CASCADE"'
 	$(APP_RUN) sh -c "alembic upgrade head && alembic check && alembic downgrade base && alembic upgrade head"
 
 .PHONY: ingest
 ingest:
 	@# The `ingest` service connects as the ingest role, the one that may write raw
 	docker compose run --rm ingest python -m pipeline.ingest
+
+.PHONY: seed-test
+seed-test:
+	@# The `seed-test` service points both URLs at pipeline_test.
+	@# raw is append-only, so a second seed adds fetches of the same payloads and staging reads the same rows
+	docker compose run --rm seed-test sh -c "alembic upgrade head && python -m pipeline.seed_test"
+
+.PHONY: dbt
+dbt:
+	@# The `dbt` service connects as the dbt role, which reads raw and owns staging and curated
+	docker compose run --rm dbt dbt $(or $(ARGS),build)
+
+.PHONY: pipeline
+pipeline:
+	$(MAKE) ingest
+	$(MAKE) dbt ARGS=build
 
 .PHONY: lint
 lint:

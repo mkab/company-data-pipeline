@@ -1,0 +1,170 @@
+{
+  "cik": "0001067983",
+  "ein": "470813844",
+  "lei": null,
+  "sic": "6331",
+  "name": "BERKSHIRE HATHAWAY INC",
+  "flags": "",
+  "phone": "4023461400",
+  "filings": {
+    "files": [
+      {
+        "name": "CIK0001067983-submissions-001.json",
+        "filingTo": "2017-02-12",
+        "filingFrom": "1998-08-10",
+        "filingCount": 1406
+      }
+    ],
+    "recent": {
+      "act": [
+        "",
+        "34",
+        "34",
+        "34"
+      ],
+      "form": [
+        "4",
+        "8-K",
+        "SCHEDULE 13D/A",
+        "10-K"
+      ],
+      "size": [
+        4634,
+        897915,
+        8103,
+        47162878
+      ],
+      "items": [
+        "",
+        "8.01,9.01",
+        "",
+        ""
+      ],
+      "isXBRL": [
+        0,
+        1,
+        0,
+        1
+      ],
+      "core_type": [
+        "4",
+        "XBRL",
+        "SCHEDULE 13D/A",
+        "XBRL"
+      ],
+      "fileNumber": [
+        "",
+        "001-14905",
+        "005-55113",
+        "001-14905"
+      ],
+      "filingDate": [
+        "2026-11-19",
+        "2026-11-19",
+        "2026-11-17",
+        "2026-03-02"
+      ],
+      "filmNumber": [
+        "",
+        "261574810",
+        "261567693",
+        "26703174"
+      ],
+      "reportDate": [
+        "2026-11-17",
+        "2026-11-19",
+        "",
+        "2025-12-31"
+      ],
+      "isInlineXBRL": [
+        0,
+        1,
+        0,
+        1
+      ],
+      "isXBRLNumeric": [
+        0,
+        0,
+        0,
+        null
+      ],
+      "accessionNumber": [
+        "0001193125-26-468887",
+        "0001193125-26-468549",
+        "0001193125-26-465884",
+        "0001193125-26-083899"
+      ],
+      "primaryDocument": [
+        "xslF345X06/ownership.xml",
+        "d197844d8k.htm",
+        "xslSCHEDULE_13D_X02/primary_doc.xml",
+        "brka-20251231.htm"
+      ],
+      "acceptanceDateTime": [
+        "2026-11-19T23:15:11.000Z",
+        "2026-11-19T21:05:28.000Z",
+        "2026-11-18T00:23:48.000Z",
+        "2026-03-02T11:02:28.000Z"
+      ],
+      "primaryDocDescription": [
+        "4",
+        "8-K",
+        "",
+        "10-K"
+      ]
+    }
+  },
+  "tickers": [
+    "BRK-B",
+    "BRK-A"
+  ],
+  "website": "",
+  "category": "Large accelerated filer",
+  "ownerOrg": "02 Finance",
+  "addresses": {
+    "mailing": {
+      "city": "OMAHA",
+      "country": null,
+      "street1": "3555 FARNAM STREET",
+      "street2": null,
+      "zipCode": "68131",
+      "countryCode": null,
+      "stateOrCountry": "NE",
+      "isForeignLocation": 0,
+      "foreignStateTerritory": null,
+      "stateOrCountryDescription": "NE"
+    },
+    "business": {
+      "city": "OMAHA",
+      "country": null,
+      "street1": "3555 FARNAM STREET",
+      "street2": null,
+      "zipCode": "68131",
+      "countryCode": null,
+      "stateOrCountry": "NE",
+      "isForeignLocation": null,
+      "foreignStateTerritory": null,
+      "stateOrCountryDescription": "NE"
+    }
+  },
+  "exchanges": [
+    "NYSE",
+    "NYSE"
+  ],
+  "entityType": "operating",
+  "description": "",
+  "formerNames": [
+    {
+      "to": "1999-01-05T05:00:00.000Z",
+      "from": "1998-08-10T04:00:00.000Z",
+      "name": "NBH INC"
+    }
+  ],
+  "fiscalYearEnd": "1231",
+  "sicDescription": "Fire, Marine & Casualty Insurance",
+  "investorWebsite": "",
+  "stateOfIncorporation": "DE",
+  "stateOfIncorporationDescription": "DE",
+  "insiderTransactionForOwnerExists": 1,
+  "insiderTransactionForIssuerExists": 1
+}

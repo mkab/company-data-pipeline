@@ -1,0 +1,157 @@
+# Each test mocks the two raw tables.
+# `edgar_fetches` is given as SQL:
+# dbt casts dict rows to each column's `information_schema` type,
+# which for the `raw.edgar_dataset` enum is `USER-DEFINED`, not a type it can cast to
+unit_tests:
+  - name: fact_reports_flatten_every_taxonomy_concept_unit_and_report
+    model: stg_edgar__fact_reports
+    given:
+      - input: source('raw', 'edgar_fetches')
+        format: sql
+        rows: |
+          select 1 as id, 'company_facts'::raw.edgar_dataset as dataset, 320193 as cik,
+            '2026-11-27 08:00:00+00'::timestamptz as fetched_at, 10 as payload_id
+      - input: source('raw', 'edgar_payloads')
+        rows:
+          - id: 10
+            payload: >
+              {"cik": 320193, "entityName": "Apple Inc.", "facts": {
+                "dei": {"EntityCommonStockSharesOutstanding": {
+                  "label": "Entity Common Stock, Shares Outstanding", "description": "Shares outstanding",
+                  "units": {"shares": [
+                    {"end": "2025-10-17", "val": 14776353000, "accn": "0000320193-25-000079",
+                     "fy": 2025, "fp": "FY", "form": "10-K", "filed": "2025-10-31", "frame": "CY2025Q3I"}
+                  ]}}},
+                "us-gaap": {"Revenues": {
+                  "label": null, "description": null,
+                  "units": {"USD": [
+                    {"start": "2024-09-29", "end": "2025-09-27", "val": 416161000000.5, "accn": "0000320193-25-000079",
+                     "fy": 2025, "fp": "FY", "form": "10-K", "filed": "2025-10-31"},
+                    {"start": "2024-09-29", "end": "2025-09-27", "val": 416161000000.5, "accn": "0000320193-26-000006",
+                     "fy": null, "fp": null, "form": "10-Q", "filed": "2026-01-30"}
+                  ]}}}
+              }}
+    expect:
+      rows:
+        - {cik: 320193, taxonomy: dei, concept: EntityCommonStockSharesOutstanding, label: "Entity Common Stock, Shares Outstanding", description: Shares outstanding, unit: shares, period_start: null, period_end: "2025-10-17", value: 14776353000, accession_number: 0000320193-25-000079, fiscal_year: 2025, fiscal_period: FY, form: 10-K, filed: "2025-10-31", frame: CY2025Q3I}
+        - {cik: 320193, taxonomy: us-gaap, concept: Revenues, label: null, description: null, unit: USD, period_start: "2024-09-29", period_end: "2025-09-27", value: 416161000000.5, accession_number: 0000320193-25-000079, fiscal_year: 2025, fiscal_period: FY, form: 10-K, filed: "2025-10-31", frame: null}
+        - {cik: 320193, taxonomy: us-gaap, concept: Revenues, label: null, description: null, unit: USD, period_start: "2024-09-29", period_end: "2025-09-27", value: 416161000000.5, accession_number: 0000320193-26-000006, fiscal_year: null, fiscal_period: null, form: 10-Q, filed: "2026-01-30", frame: null}
+
+  - name: no_fact_reports_when_the_latest_company_facts_fetch_is_a_404
+    description: Generation Essentials Group had facts on the first fetch, then a 404, while Apple still has its facts.
+    model: stg_edgar__fact_reports
+    given:
+      - input: source('raw', 'edgar_fetches')
+        format: sql
+        rows: |
+          select 1 as id, 'company_facts'::raw.edgar_dataset as dataset, 2053456 as cik,
+            '2026-11-26 08:00:00+00'::timestamptz as fetched_at, 10 as payload_id
+          union all
+          select 2, 'company_facts', 2053456, '2026-11-27 08:00:00+00', null
+          union all
+          select 3, 'company_facts', 320193, '2026-11-27 08:00:00+00', 11
+      - input: source('raw', 'edgar_payloads')
+        rows:
+          - id: 10
+            payload: >
+              {"cik": 2053456, "entityName": "Generation Essentials Group", "facts": {"dei": {"EntityPublicFloat": {
+                "label": "Entity Public Float", "description": null,
+                "units": {"USD": [{"end": "2025-06-30", "val": 1, "accn": "0001213900-25-000001", "fy": 2025, "fp": "FY", "form": "20-F", "filed": "2025-10-01"}]}}}}}
+          - id: 11
+            payload: >
+              {"cik": 320193, "entityName": "Apple Inc.", "facts": {"dei": {"EntityPublicFloat": {
+                "label": "Entity Public Float", "description": null,
+                "units": {"USD": [{"end": "2025-03-28", "val": 2, "accn": "0000320193-25-000079", "fy": 2025, "fp": "FY", "form": "10-K", "filed": "2025-10-31"}]}}}}}
+    expect:
+      rows:
+        - {cik: 320193, concept: EntityPublicFloat, value: 2}
+
+  - name: filings_are_one_row_per_position_of_the_recent_arrays
+    model: stg_edgar__filings
+    given:
+      - input: source('raw', 'edgar_fetches')
+        format: sql
+        rows: |
+          select 1 as id, 'submissions'::raw.edgar_dataset as dataset, 19617 as cik,
+            '2026-11-27 08:00:00+00'::timestamptz as fetched_at, 10 as payload_id
+      - input: source('raw', 'edgar_payloads')
+        rows:
+          - id: 10
+            payload: >
+              {"cik": "0000019617", "name": "JPMORGAN CHASE & CO", "filings": {"files": [], "recent": {
+                "accessionNumber": ["0001628280-26-008131", "0001213900-26-124232"],
+                "form": ["10-K", "424B2"],
+                "core_type": ["XBRL", "424B2"],
+                "filingDate": ["2026-02-13", "2026-11-25"],
+                "reportDate": ["2025-12-31", ""],
+                "acceptanceDateTime": ["2026-02-13T16:20:00.000Z", "2026-11-25T17:11:11.000Z"],
+                "act": ["34", ""],
+                "fileNumber": ["001-05805", "333-270004"],
+                "filmNumber": ["26627514", "261590063"],
+                "items": ["", ""],
+                "size": [64896112, 2528523],
+                "isXBRL": [1, 0],
+                "isInlineXBRL": [1, 0],
+                "isXBRLNumeric": [1, 0],
+                "primaryDocument": ["jpm-20251231.htm", "dp240561_424b2.htm"],
+                "primaryDocDescription": ["10-K", ""]
+              }}}
+    expect:
+      rows:
+        - {cik: 19617, accession_number: 0001628280-26-008131, form: 10-K, core_type: XBRL, filing_date: "2026-02-13", report_date: "2025-12-31", accepted_at: "2026-02-13 16:20:00+00", act: "34", file_number: 001-05805, film_number: "26627514", items: null, size: 64896112, is_xbrl: true, is_inline_xbrl: true, is_xbrl_numeric: true, primary_document: jpm-20251231.htm, primary_document_description: 10-K}
+        - {cik: 19617, accession_number: 0001213900-26-124232, form: 424B2, core_type: 424B2, filing_date: "2026-11-25", report_date: null, accepted_at: "2026-11-25 17:11:11+00", act: null, file_number: 333-270004, film_number: "261590063", items: null, size: 2528523, is_xbrl: false, is_inline_xbrl: false, is_xbrl_numeric: false, primary_document: dp240561_424b2.htm, primary_document_description: null}
+
+  - name: submissions_come_from_each_companys_latest_fetch
+    description: An older fetch is ignored, and on a tie on `fetched_at` the later recorded fetch wins.
+    model: stg_edgar__submissions
+    given:
+      - input: source('raw', 'edgar_fetches')
+        format: sql
+        rows: |
+          select 1 as id, 'submissions'::raw.edgar_dataset as dataset, 320193 as cik,
+            '2026-11-26 08:00:00+00'::timestamptz as fetched_at, 10 as payload_id
+          union all
+          select 2, 'submissions', 320193, '2026-11-27 08:00:00+00', 11
+          union all
+          select 3, 'submissions', 353278, '2026-11-27 08:00:00+00', 12
+          union all
+          select 4, 'submissions', 353278, '2026-11-27 08:00:00+00', 13
+      - input: source('raw', 'edgar_payloads')
+        rows:
+          - {id: 10, payload: '{"cik": "0000320193", "name": "Apple Computer Inc", "filings": {}}'}
+          - id: 11
+            payload: >
+              {"cik": "0000320193", "name": "Apple Inc.", "entityType": "operating", "sic": "3571",
+               "sicDescription": "Electronic Computers", "fiscalYearEnd": "0926", "stateOfIncorporation": "CA", "filings": {}}
+          - {id: 12, payload: '{"cik": "0000353278", "name": "NOVO NORDISK A/S", "filings": {}}'}
+          - id: 13
+            payload: >
+              {"cik": "0000353278", "name": "NOVO NORDISK A S", "entityType": "other", "sic": "2834",
+               "sicDescription": "Pharmaceutical Preparations", "fiscalYearEnd": "1231", "stateOfIncorporation": "", "filings": {}}
+    expect:
+      rows:
+        - {cik: 320193, name: Apple Inc., entity_type: operating, sic: "3571", sic_description: Electronic Computers, fiscal_year_end: "0926", state_of_incorporation: CA}
+        - {cik: 353278, name: NOVO NORDISK A S, entity_type: other, sic: "2834", sic_description: Pharmaceutical Preparations, fiscal_year_end: "1231", state_of_incorporation: null}
+
+  - name: company_tickers_are_one_row_per_entry_of_the_tickers_file
+    model: stg_edgar__company_tickers
+    given:
+      - input: source('raw', 'edgar_fetches')
+        format: sql
+        rows: |
+          select 1 as id, 'company_tickers'::raw.edgar_dataset as dataset, null::bigint as cik,
+            '2026-11-27 08:00:00+00'::timestamptz as fetched_at, 10 as payload_id
+      - input: source('raw', 'edgar_payloads')
+        rows:
+          - id: 10
+            payload: >
+              {"fields": ["cik", "name", "ticker", "exchange"], "data": [
+                [1067983, "BERKSHIRE HATHAWAY INC", "BRK-B", "NYSE"],
+                [1067983, "BERKSHIRE HATHAWAY INC", "BRK-A", "NYSE"],
+                [1834261, "Core Specialty Insurance Holdings, Inc.", "CORE", null]
+              ]}
+    expect:
+      rows:
+        - {cik: 1067983, name: BERKSHIRE HATHAWAY INC, ticker: BRK-B, exchange: NYSE}
+        - {cik: 1067983, name: BERKSHIRE HATHAWAY INC, ticker: BRK-A, exchange: NYSE}
+        - {cik: 1834261, name: "Core Specialty Insurance Holdings, Inc.", ticker: CORE, exchange: null}

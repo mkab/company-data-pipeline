@@ -1,0 +1,4 @@
+# dbt_utils only, pinned: `dbt deps` runs at image build time
+packages:
+  - package: dbt-labs/dbt_utils
+    version: 1.4.1

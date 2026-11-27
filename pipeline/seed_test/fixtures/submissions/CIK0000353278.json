@@ -1,0 +1,180 @@
+{
+  "cik": "0000353278",
+  "ein": "000000000",
+  "lei": null,
+  "sic": "2834",
+  "name": "NOVO NORDISK A S",
+  "flags": "",
+  "phone": "4544448888",
+  "filings": {
+    "files": [
+      {
+        "name": "CIK0000353278-submissions-001.json",
+        "filingTo": "2016-04-10",
+        "filingFrom": "2001-01-18",
+        "filingCount": 1056
+      }
+    ],
+    "recent": {
+      "act": [
+        "34",
+        "34",
+        "34",
+        "",
+        "34"
+      ],
+      "form": [
+        "6-K",
+        "6-K",
+        "6-K",
+        "SCHEDULE 13G/A",
+        "20-F"
+      ],
+      "size": [
+        164400,
+        164858,
+        163086,
+        6717,
+        307002532
+      ],
+      "items": [
+        "",
+        "",
+        "",
+        "",
+        ""
+      ],
+      "isXBRL": [
+        0,
+        0,
+        0,
+        0,
+        1
+      ],
+      "core_type": [
+        "6-K",
+        "6-K",
+        "6-K",
+        "SCHEDULE 13G/A",
+        "XBRL"
+      ],
+      "fileNumber": [
+        "333-82318",
+        "333-82318",
+        "333-82318",
+        "",
+        "333-82318"
+      ],
+      "filingDate": [
+        "2026-11-23",
+        "2026-11-16",
+        "2026-11-09",
+        "2026-06-22",
+        "2026-02-04"
+      ],
+      "filmNumber": [
+        "261581756",
+        "261557276",
+        "261533933",
+        "",
+        "26596261"
+      ],
+      "reportDate": [
+        "2026-11-23",
+        "2026-11-16",
+        "2026-11-09",
+        "",
+        "2025-12-31"
+      ],
+      "isInlineXBRL": [
+        0,
+        0,
+        0,
+        0,
+        1
+      ],
+      "isXBRLNumeric": [
+        0,
+        0,
+        0,
+        0,
+        null
+      ],
+      "accessionNumber": [
+        "0001171843-26-007637",
+        "0001171843-26-007470",
+        "0001171843-26-007260",
+        "0000950103-26-009261",
+        "0000353278-26-000012"
+      ],
+      "primaryDocument": [
+        "f6k_112326.htm",
+        "f6k_111626.htm",
+        "f6k_110926.htm",
+        "xslSCHEDULE_13G_X02/primary_doc.xml",
+        "nvo-20251231.htm"
+      ],
+      "acceptanceDateTime": [
+        "2026-11-23T15:43:54.000Z",
+        "2026-11-16T16:15:56.000Z",
+        "2026-11-09T13:09:49.000Z",
+        "2026-06-22T12:00:11.000Z",
+        "2026-02-04T14:23:00.000Z"
+      ],
+      "primaryDocDescription": [
+        "FORM 6-K",
+        "FORM 6-K",
+        "FORM 6-K",
+        "",
+        "20-F"
+      ]
+    }
+  },
+  "tickers": [
+    "NVO",
+    "NONOF"
+  ],
+  "website": "",
+  "category": "Large accelerated filer",
+  "ownerOrg": "03 Life Sciences",
+  "addresses": {
+    "mailing": {
+      "city": "BAGSVAERD DENMARK",
+      "country": null,
+      "street1": "NOVO ALLE DK 2880",
+      "street2": null,
+      "zipCode": "00000",
+      "countryCode": null,
+      "stateOrCountry": "G7",
+      "isForeignLocation": 0,
+      "foreignStateTerritory": null,
+      "stateOrCountryDescription": "Denmark"
+    },
+    "business": {
+      "city": "BAGSVAERD DENMARK",
+      "country": null,
+      "street1": "NOVO ALLE DK 2880",
+      "street2": null,
+      "zipCode": "00000",
+      "countryCode": null,
+      "stateOrCountry": "G7",
+      "isForeignLocation": null,
+      "foreignStateTerritory": null,
+      "stateOrCountryDescription": "Denmark"
+    }
+  },
+  "exchanges": [
+    "NYSE",
+    "OTC"
+  ],
+  "entityType": "other",
+  "description": "",
+  "formerNames": [],
+  "fiscalYearEnd": "1231",
+  "sicDescription": "Pharmaceutical Preparations",
+  "investorWebsite": "",
+  "stateOfIncorporation": "",
+  "stateOfIncorporationDescription": "",
+  "insiderTransactionForOwnerExists": 1,
+  "insiderTransactionForIssuerExists": 0
+}
