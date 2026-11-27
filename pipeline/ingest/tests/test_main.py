@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 
+from pipeline.ingest import __main__ as ingest_cli
 from pipeline.ingest.__main__ import ingest, main
 from pipeline.sources.edgar.client import submissions_url
 
@@ -10,6 +11,11 @@ if TYPE_CHECKING:
     from pipeline.ingest.tests.fakes import FakeEdgar
     from pipeline.ingest.tracked_companies import TrackedCompany
     from pipeline.sources.edgar.client import EdgarClient
+
+
+async def ingest_that_succeeds(edgar: EdgarClient, tracked_companies: list[TrackedCompany]) -> int:
+    """Stand in for `ingest`, with its signature, as a run that recorded every fetch."""
+    return 0
 
 
 @pytest.mark.anyio
@@ -51,3 +57,12 @@ def test_the_cli_says_why_it_refuses_to_start(
         "EDGAR_USER_AGENT is required: "
         'set it to a name and a contact email, such as "Jane Doe jane@example.com"'
     )
+
+
+def test_the_cli_exits_with_the_status_of_the_ingest_run(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("EDGAR_USER_AGENT", "Jane Doe jane@example.com")
+    monkeypatch.setattr(ingest_cli, "ingest", ingest_that_succeeds)
+
+    assert main() == 0
