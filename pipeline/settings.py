@@ -1,5 +1,6 @@
 from functools import cache
 
+from pydantic import Field
 from pydantic_settings import BaseSettings
 
 
@@ -21,6 +22,17 @@ class MigrationSettings(BaseSettings):
     """
 
     migrations_database_url: str
+
+
+class EdgarSettings(BaseSettings):
+    """Configuration the ingest CLI reads from environment variables to call SEC EDGAR.
+
+    `EDGAR_USER_AGENT` is the name and contact email SEC asks every client to send.
+    It has no default, and an empty value counts as missing.
+    It is kept apart from `Settings`, so the API starts without it.
+    """
+
+    edgar_user_agent: str = Field(min_length=1)
 
 
 @cache
