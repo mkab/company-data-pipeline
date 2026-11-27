@@ -1,9 +1,11 @@
 import asyncio
 import logging
 from datetime import UTC
+from typing import TYPE_CHECKING
 
 import httpx2
 import pytest
+import stamina
 
 from pipeline.sources.http import (
     SourceClient,
@@ -12,57 +14,58 @@ from pipeline.sources.http import (
     SourceUnavailableError,
     retry_after_backoff,
 )
+from pipeline.sources.tests.fakes import FakeClock, ScriptedSource
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Coroutine, Iterator
+
+    from stamina.instrumentation import RetryDetails
+
+    type Handler = (
+        Callable[[httpx2.Request], httpx2.Response]
+        | Callable[[httpx2.Request], Coroutine[None, None, httpx2.Response]]
+    )
 
 URL = "https://example.com/data.json"
 
 
-class FakeClock:
-    """A monotonic clock that only moves when the client sleeps or a response takes time."""
-
-    def __init__(self) -> None:
-        self.now = 0.0
-        self.sleeps: list[float] = []
-
-    def __call__(self) -> float:
-        return self.now
-
-    async def sleep(self, seconds: float) -> None:
-        self.sleeps.append(seconds)
-        self.now += seconds
-
-
-class ScriptedSource:
-    """Answers each request with the next outcome: a response to return or an error to raise."""
-
-    def __init__(self, outcomes: list[httpx2.Response | httpx2.TransportError]) -> None:
-        self.outcomes = outcomes
-        self.requests: list[httpx2.Request] = []
-
-    def __call__(self, request: httpx2.Request) -> httpx2.Response:
-        self.requests.append(request)
-        outcome = self.outcomes.pop(0)
-        if isinstance(outcome, httpx2.TransportError):
-            raise outcome
-        return outcome
-
-
-def make_settings(*, requests_per_second: float = 5, max_in_flight: int = 5) -> SourceSettings:
+def make_settings(
+    *, requests_per_second: float = 5, max_in_flight: int = 5, wait_initial: float = 1.0
+) -> SourceSettings:
     return SourceSettings(
         name="Example",
         user_agent="Jane Doe jane@example.com",
         requests_per_second=requests_per_second,
         max_in_flight=max_in_flight,
+        wait_initial=wait_initial,
     )
 
 
-def make_client(source: ScriptedSource, clock: FakeClock | None = None) -> SourceClient:
+def make_client(
+    handler: Handler, clock: FakeClock | None = None, settings: SourceSettings | None = None
+) -> SourceClient:
+    """Return a client served by `handler`, whose waits only move `clock`."""
     clock = clock or FakeClock()
     return SourceClient(
-        make_settings(),
-        transport=httpx2.MockTransport(source),
+        settings or make_settings(),
+        transport=httpx2.MockTransport(handler),
         clock=clock,
         sleep=clock.sleep,
     )
+
+
+@pytest.fixture
+def retry_waits() -> Iterator[list[float]]:
+    """Run stamina for real, and collect the wait it schedules before each retry."""
+    waits: list[float] = []
+
+    def record_wait(details: RetryDetails) -> None:
+        waits.append(details.wait_for)
+
+    stamina.instrumentation.set_on_retry_hooks([record_wait])
+    with stamina.set_testing(False):
+        yield waits
+    stamina.instrumentation.set_on_retry_hooks(None)
 
 
 @pytest.mark.anyio
@@ -137,19 +140,19 @@ async def test_a_rate_limit_or_server_error_is_retried(status: int) -> None:
 
 
 @pytest.mark.anyio
-async def test_a_429_with_retry_after_is_retried() -> None:
+async def test_the_wait_a_429_asks_for_replaces_the_backoff(retry_waits: list[float]) -> None:
+    # A 60s first backoff would time the test out if the Retry-After of 0 were ignored
     source = ScriptedSource(
         [
-            httpx2.Response(429, headers={"Retry-After": "7"}),
+            httpx2.Response(429, headers={"Retry-After": "0"}),
             httpx2.Response(200, content=b"{}"),
         ]
     )
 
-    async with make_client(source) as client:
-        response = await client.get(URL)
+    async with make_client(source, settings=make_settings(wait_initial=60)) as client:
+        await client.get(URL)
 
-    assert response.status == 200
-    assert len(source.requests) == 2
+    assert retry_waits == [0.0]
 
 
 @pytest.mark.anyio
@@ -252,13 +255,7 @@ async def test_no_more_requests_are_in_flight_than_the_source_allows() -> None:
         in_flight -= 1
         return httpx2.Response(200, content=b"{}")
 
-    clock = FakeClock()
-    client = SourceClient(
-        make_settings(requests_per_second=1000, max_in_flight=2),
-        transport=httpx2.MockTransport(respond),
-        clock=clock,
-        sleep=clock.sleep,
-    )
+    client = make_client(respond, settings=make_settings(max_in_flight=2))
     async with client, asyncio.TaskGroup() as task_group:
         task_group.create_task(client.get(URL))
         task_group.create_task(client.get(URL))
@@ -278,12 +275,7 @@ async def test_each_attempt_logs_one_line_without_the_query_string(
         clock.now += 0.25
         return httpx2.Response(200, content=b'{"secret": "body"}')
 
-    client = SourceClient(
-        make_settings(),
-        transport=httpx2.MockTransport(respond_after_250_ms),
-        clock=clock,
-        sleep=clock.sleep,
-    )
+    client = make_client(respond_after_250_ms, clock)
     with caplog.at_level(logging.INFO):
         async with client:
             await client.get("https://example.com/data.json?token=secret")

@@ -9,6 +9,7 @@ from pipeline.sources.edgar.client import (
     edgar_source_settings,
 )
 from pipeline.sources.http import SourceClient, SourceRefusedError
+from pipeline.sources.tests.fakes import ScriptedSource
 
 TICKERS_FIXTURE = Path(__file__).parent / "fixtures" / "company_tickers_exchange.json"
 CASSETTES = Path(__file__).parent / "cassettes" / "test_client"
@@ -20,19 +21,7 @@ SMALL_FILER_CIK = 2093536
 NO_FACTS_CIK = 2053456
 
 
-class FixedSource:
-    """Answers every request with the same response, and keeps the requests it saw."""
-
-    def __init__(self, response: httpx2.Response) -> None:
-        self.response = response
-        self.requests: list[httpx2.Request] = []
-
-    def __call__(self, request: httpx2.Request) -> httpx2.Response:
-        self.requests.append(request)
-        return self.response
-
-
-def make_edgar(source: FixedSource) -> EdgarClient:
+def make_edgar(source: ScriptedSource) -> EdgarClient:
     return EdgarClient(
         SourceClient(
             edgar_source_settings("Jane Doe jane@example.com"),
@@ -43,7 +32,7 @@ def make_edgar(source: FixedSource) -> EdgarClient:
 
 @pytest.mark.anyio
 async def test_the_tickers_file_is_fetched_from_www_sec_gov() -> None:
-    source = FixedSource(httpx2.Response(200, content=TICKERS_FIXTURE.read_bytes()))
+    source = ScriptedSource([httpx2.Response(200, content=TICKERS_FIXTURE.read_bytes())])
 
     async with make_edgar(source) as edgar:
         await edgar.get_tickers()
@@ -53,7 +42,7 @@ async def test_the_tickers_file_is_fetched_from_www_sec_gov() -> None:
 
 @pytest.mark.anyio
 async def test_the_tickers_file_comes_back_as_received() -> None:
-    source = FixedSource(httpx2.Response(200, content=TICKERS_FIXTURE.read_bytes()))
+    source = ScriptedSource([httpx2.Response(200, content=TICKERS_FIXTURE.read_bytes())])
 
     async with make_edgar(source) as edgar:
         response = await edgar.get_tickers()
@@ -72,7 +61,7 @@ async def test_the_tickers_file_comes_back_as_received() -> None:
     ],
 )
 async def test_a_tickers_file_without_its_envelope_is_unexpected(body: bytes) -> None:
-    source = FixedSource(httpx2.Response(200, content=body))
+    source = ScriptedSource([httpx2.Response(200, content=body)])
 
     async with make_edgar(source) as edgar:
         with pytest.raises(UnexpectedPayloadError, match=r"company_tickers_exchange\.json"):
@@ -81,7 +70,7 @@ async def test_a_tickers_file_without_its_envelope_is_unexpected(body: bytes) ->
 
 @pytest.mark.anyio
 async def test_submissions_without_their_envelope_are_unexpected() -> None:
-    source = FixedSource(httpx2.Response(200, content=b'{"cik": "0000320193"}'))
+    source = ScriptedSource([httpx2.Response(200, content=b'{"cik": "0000320193"}')])
 
     async with make_edgar(source) as edgar:
         with pytest.raises(UnexpectedPayloadError, match="CIK0000320193"):
@@ -90,7 +79,7 @@ async def test_submissions_without_their_envelope_are_unexpected() -> None:
 
 @pytest.mark.anyio
 async def test_company_facts_without_their_envelope_are_unexpected() -> None:
-    source = FixedSource(httpx2.Response(200, content=b'{"cik": 320193, "facts": []}'))
+    source = ScriptedSource([httpx2.Response(200, content=b'{"cik": 320193, "facts": []}')])
 
     async with make_edgar(source) as edgar:
         with pytest.raises(UnexpectedPayloadError, match="CIK0000320193"):
@@ -99,7 +88,7 @@ async def test_company_facts_without_their_envelope_are_unexpected() -> None:
 
 @pytest.mark.anyio
 async def test_a_submissions_404_is_refused() -> None:
-    source = FixedSource(httpx2.Response(404))
+    source = ScriptedSource([httpx2.Response(404)])
 
     async with make_edgar(source) as edgar:
         with pytest.raises(SourceRefusedError):
@@ -108,7 +97,7 @@ async def test_a_submissions_404_is_refused() -> None:
 
 @pytest.mark.anyio
 async def test_a_company_facts_refusal_other_than_404_is_raised() -> None:
-    source = FixedSource(httpx2.Response(403))
+    source = ScriptedSource([httpx2.Response(403)])
 
     async with make_edgar(source) as edgar:
         with pytest.raises(SourceRefusedError, match="status 403"):
