@@ -3,7 +3,8 @@ from http import HTTPStatus
 
 from factory.base import Factory
 
-from pipeline.raw.models import EdgarDataset, EdgarFetch, EdgarPayload
+from pipeline.raw.enums import EdgarDataset
+from pipeline.raw.models import EdgarFetch, EdgarPayload
 
 
 class EdgarPayloadFactory(Factory[EdgarPayload]):

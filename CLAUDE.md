@@ -45,7 +45,7 @@ Ruff (`pyproject.toml`) enforces most of these, plus no naive datetimes (`DTZ`),
 - **Types: strict mypy.** Every first-party module is fully annotated, and no module is relaxed by a `[[tool.mypy.overrides]]` entry. Overrides are only for third-party packages that ship no types. A `# type: ignore` names its error code and a comment says why.
 - **Names used only in type hints are imported under `if TYPE_CHECKING:`**, and the annotation stays unquoted (ruff strict `TC001`-`TC004`, `UP037`). Exception: FastAPI and pydantic read annotations at runtime, so a name in a route or dependency signature, or in a pydantic model, must be a real import. `pydantic.BaseModel` is listed in ruff's `runtime-evaluated-base-classes`; a new runtime reader is added there.
 - **Imports go at the top of the module**, absolute only (no relative imports). Keep a function-level import only when a real cycle forces it, with a comment naming it. Import a name from the module that defines it, never from one that merely imports it.
-- **Enums and the constants derived from them go at the top of their module, directly under the imports, or in the package's `constants.py`.** Never partway down a file between classes.
+- **Enums go in their package's `enums.py`, and constants in its `constants.py`** (a constant used by one module only may sit at the top of it, directly under the imports). Never partway down a file between classes.
 - **No `print`** in application code (ruff `T20`): use the logger.
 - **User-facing copy is sentence case**: every error message and response text. Proper nouns and acronyms keep their case.
 

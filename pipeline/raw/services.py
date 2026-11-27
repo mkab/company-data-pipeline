@@ -3,23 +3,26 @@ from http import HTTPStatus
 from typing import TYPE_CHECKING
 
 from pipeline.raw.models import EdgarFetch
-from pipeline.raw.repositories import EdgarFetchRepository, EdgarPayloadRepository
+from pipeline.raw.repositories import PostgresEdgarFetchRepository, PostgresEdgarPayloadRepository
 
 if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio import AsyncSession
 
-    from pipeline.raw.models import EdgarDataset
+    from pipeline.raw.enums import EdgarDataset
+    from pipeline.raw.repositories import EdgarFetchRepository, EdgarPayloadRepository
     from pipeline.sources.http import FetchedResponse
 
 
 class EdgarFetchService:
+    """Records fetches through the repository Protocols, so unit tests can pass fakes."""
+
     def __init__(self, payloads: EdgarPayloadRepository, fetches: EdgarFetchRepository) -> None:
         self.payloads = payloads
         self.fetches = fetches
 
     @classmethod
     def from_session(cls, session: AsyncSession) -> EdgarFetchService:
-        return cls(EdgarPayloadRepository(session), EdgarFetchRepository(session))
+        return cls(PostgresEdgarPayloadRepository(session), PostgresEdgarFetchRepository(session))
 
     async def record_fetch(
         self, response: FetchedResponse, *, dataset: EdgarDataset, cik: int | None

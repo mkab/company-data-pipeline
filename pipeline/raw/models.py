@@ -1,5 +1,4 @@
 from datetime import datetime
-from enum import StrEnum
 from http import HTTPStatus
 
 import sqlalchemy as sa
@@ -7,13 +6,7 @@ from sqlalchemy.dialects.postgresql import BYTEA, JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from pipeline.database import RAW_SCHEMA, ModelBase
-
-
-class EdgarDataset(StrEnum):
-    COMPANY_TICKERS = "company_tickers"
-    SUBMISSIONS = "submissions"
-    COMPANY_FACTS = "company_facts"
-
+from pipeline.raw.enums import EdgarDataset
 
 # Tables are declarative models inheriting from `ModelBase` (a `sqlalchemy.orm.DeclarativeBase`),
 # not Core `sa.Table`s: the columns are typed, and the standard columns come from `ModelBase`

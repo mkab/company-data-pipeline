@@ -1,13 +1,13 @@
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING
-from unittest.mock import AsyncMock
 
 import pytest
 import sqlalchemy as sa
 
-from pipeline.raw.models import EdgarDataset, EdgarFetch, EdgarPayload
-from pipeline.raw.repositories import EdgarFetchRepository, EdgarPayloadRepository
+from pipeline.raw.enums import EdgarDataset
+from pipeline.raw.models import EdgarFetch, EdgarPayload
 from pipeline.raw.services import EdgarFetchService
+from pipeline.raw.tests.fakes import FakeEdgarFetchRepository, FakeEdgarPayloadRepository
 from pipeline.sources.tests.factories import FetchedResponseFactory
 
 if TYPE_CHECKING:
@@ -15,28 +15,30 @@ if TYPE_CHECKING:
 
 pytestmark = pytest.mark.anyio
 
-# sha256 of the body the unit tests record
+# sha256 of b'{"cik": "0000320193", "name": "Apple Inc."}'
 BODY_SHA256 = bytes.fromhex("222b12d093f0ec3682d3e168e59a0e3bec3e623cdf812d0192400f1422ca0ebb")
 
 
-def mocked_service(
-    *, inserted_id: int | None = 1, existing_id: int = 1
-) -> tuple[EdgarFetchService, AsyncMock, AsyncMock]:
-    payloads = AsyncMock(spec=EdgarPayloadRepository)
-    payloads.insert_if_absent.return_value = inserted_id
-    payloads.get_id_by_sha256.return_value = existing_id
-    fetches = AsyncMock(spec=EdgarFetchRepository)
-    return EdgarFetchService(payloads, fetches), payloads, fetches
+@pytest.fixture
+def payloads() -> FakeEdgarPayloadRepository:
+    return FakeEdgarPayloadRepository()
 
 
-def added_fetch(fetches: AsyncMock) -> EdgarFetch:
-    fetch: EdgarFetch = fetches.add.await_args.args[0]
-    return fetch
+@pytest.fixture
+def fetches() -> FakeEdgarFetchRepository:
+    return FakeEdgarFetchRepository()
 
 
-async def test_a_new_body_is_stored_under_its_sha256() -> None:
-    service, payloads, _ = mocked_service()
+@pytest.fixture
+def service(
+    payloads: FakeEdgarPayloadRepository, fetches: FakeEdgarFetchRepository
+) -> EdgarFetchService:
+    return EdgarFetchService(payloads, fetches)
 
+
+async def test_a_new_body_is_stored_under_its_sha256(
+    service: EdgarFetchService, payloads: FakeEdgarPayloadRepository
+) -> None:
     await service.record_fetch(
         FetchedResponseFactory.build(
             status=200, body=b'{"cik": "0000320193", "name": "Apple Inc."}'
@@ -45,51 +47,64 @@ async def test_a_new_body_is_stored_under_its_sha256() -> None:
         cik=320193,
     )
 
-    payloads.insert_if_absent.assert_awaited_once_with(
-        sha256=BODY_SHA256, payload_json='{"cik": "0000320193", "name": "Apple Inc."}'
-    )
+    assert payloads.payloads == {BODY_SHA256: (1, '{"cik": "0000320193", "name": "Apple Inc."}')}
 
 
-async def test_a_new_body_links_the_fetch_to_the_inserted_payload() -> None:
-    service, _, fetches = mocked_service(inserted_id=7)
-
+async def test_the_same_body_twice_links_both_fetches_to_one_payload(
+    service: EdgarFetchService,
+    payloads: FakeEdgarPayloadRepository,
+    fetches: FakeEdgarFetchRepository,
+) -> None:
     await service.record_fetch(
-        FetchedResponseFactory.build(status=200),
+        FetchedResponseFactory.build(status=200, body=b'{"cik": "0000320193"}'),
+        dataset=EdgarDataset.SUBMISSIONS,
+        cik=320193,
+    )
+    await service.record_fetch(
+        FetchedResponseFactory.build(status=200, body=b'{"cik": "0000320193"}'),
         dataset=EdgarDataset.SUBMISSIONS,
         cik=320193,
     )
 
-    assert added_fetch(fetches).payload_id == 7
+    assert len(payloads.payloads) == 1
+    assert [fetch.payload_id for fetch in fetches.fetches] == [1, 1]
 
 
-async def test_a_stored_body_links_the_fetch_to_the_existing_payload() -> None:
-    service, _, fetches = mocked_service(inserted_id=None, existing_id=3)
-
+async def test_a_different_body_links_the_fetch_to_a_new_payload(
+    service: EdgarFetchService, fetches: FakeEdgarFetchRepository
+) -> None:
     await service.record_fetch(
-        FetchedResponseFactory.build(status=200),
+        FetchedResponseFactory.build(status=200, body=b'{"cik": "0000320193"}'),
+        dataset=EdgarDataset.SUBMISSIONS,
+        cik=320193,
+    )
+    await service.record_fetch(
+        FetchedResponseFactory.build(status=200, body=b'{"cik":"0000320193"}'),
         dataset=EdgarDataset.SUBMISSIONS,
         cik=320193,
     )
 
-    assert added_fetch(fetches).payload_id == 3
+    assert [fetch.payload_id for fetch in fetches.fetches] == [1, 2]
 
 
-async def test_a_not_found_fetch_stores_no_payload() -> None:
-    service, payloads, fetches = mocked_service()
-
+async def test_a_not_found_fetch_stores_no_payload(
+    service: EdgarFetchService,
+    payloads: FakeEdgarPayloadRepository,
+    fetches: FakeEdgarFetchRepository,
+) -> None:
     await service.record_fetch(
         FetchedResponseFactory.build(status=404, body=b"<html>Not found</html>"),
         dataset=EdgarDataset.COMPANY_FACTS,
         cik=1000045,
     )
 
-    payloads.insert_if_absent.assert_not_awaited()
-    assert added_fetch(fetches).payload_id is None
+    assert payloads.payloads == {}
+    assert fetches.fetches[0].payload_id is None
 
 
-async def test_a_fetch_is_recorded_with_its_response_details() -> None:
-    service, _, fetches = mocked_service()
-
+async def test_a_fetch_is_recorded_with_its_response_details(
+    service: EdgarFetchService, fetches: FakeEdgarFetchRepository
+) -> None:
     await service.record_fetch(
         FetchedResponseFactory.build(
             url="https://www.sec.gov/files/company_tickers.json",
@@ -100,7 +115,7 @@ async def test_a_fetch_is_recorded_with_its_response_details() -> None:
         cik=None,
     )
 
-    fetch = added_fetch(fetches)
+    [fetch] = fetches.fetches
     assert fetch.dataset == EdgarDataset.COMPANY_TICKERS
     assert fetch.cik is None
     assert fetch.url == "https://www.sec.gov/files/company_tickers.json"

@@ -10,8 +10,9 @@ import pytest
 import sqlalchemy as sa
 from sqlalchemy.exc import IntegrityError
 
-from pipeline.raw.models import EdgarDataset, EdgarFetch, EdgarPayload
-from pipeline.raw.repositories import EdgarFetchRepository, EdgarPayloadRepository
+from pipeline.raw.enums import EdgarDataset
+from pipeline.raw.models import EdgarFetch, EdgarPayload
+from pipeline.raw.repositories import PostgresEdgarFetchRepository, PostgresEdgarPayloadRepository
 from pipeline.raw.tests.factories import EdgarFetchFactory
 
 if TYPE_CHECKING:
@@ -23,7 +24,7 @@ pytestmark = pytest.mark.anyio
 async def test_insert_if_absent_returns_the_id_of_a_new_payload(
     ingest_session: AsyncSession,
 ) -> None:
-    payload_id = await EdgarPayloadRepository(ingest_session).insert_if_absent(
+    payload_id = await PostgresEdgarPayloadRepository(ingest_session).insert_if_absent(
         sha256=b"\x01", payload_json='{"cik": "0000320193"}'
     )
 
@@ -35,7 +36,7 @@ async def test_insert_if_absent_returns_the_id_of_a_new_payload(
 async def test_insert_if_absent_returns_none_for_a_stored_sha256(
     ingest_session: AsyncSession,
 ) -> None:
-    payloads = EdgarPayloadRepository(ingest_session)
+    payloads = PostgresEdgarPayloadRepository(ingest_session)
     await payloads.insert_if_absent(sha256=b"\x01", payload_json='{"cik": "0000320193"}')
 
     payload_id = await payloads.insert_if_absent(sha256=b"\x01", payload_json="{}")
@@ -44,7 +45,7 @@ async def test_insert_if_absent_returns_none_for_a_stored_sha256(
 
 
 async def test_insert_if_absent_stores_the_payload_as_json(ingest_session: AsyncSession) -> None:
-    await EdgarPayloadRepository(ingest_session).insert_if_absent(
+    await PostgresEdgarPayloadRepository(ingest_session).insert_if_absent(
         sha256=b"\x01", payload_json='{"cik": "0000320193", "name": "Apple Inc."}'
     )
 
@@ -55,7 +56,7 @@ async def test_insert_if_absent_stores_the_payload_as_json(ingest_session: Async
 async def test_get_id_by_sha256_returns_the_stored_payload_id(
     ingest_session: AsyncSession,
 ) -> None:
-    payloads = EdgarPayloadRepository(ingest_session)
+    payloads = PostgresEdgarPayloadRepository(ingest_session)
     await payloads.insert_if_absent(sha256=b"\x01", payload_json="{}")
     inserted_id = await payloads.insert_if_absent(sha256=b"\x02", payload_json="{}")
 
@@ -63,7 +64,7 @@ async def test_get_id_by_sha256_returns_the_stored_payload_id(
 
 
 async def test_add_stores_a_fetch(ingest_session: AsyncSession) -> None:
-    await EdgarFetchRepository(ingest_session).add(
+    await PostgresEdgarFetchRepository(ingest_session).add(
         EdgarFetchFactory.build(
             dataset=EdgarDataset.COMPANY_FACTS,
             cik=1000045,
@@ -96,13 +97,13 @@ async def test_a_cik_is_required_for_a_company_dataset_only(
     ingest_session: AsyncSession, dataset: EdgarDataset, cik: int | None
 ) -> None:
     with pytest.raises(IntegrityError, match="edgar_fetches_cik_set_per_company_check"):
-        await EdgarFetchRepository(ingest_session).add(
+        await PostgresEdgarFetchRepository(ingest_session).add(
             EdgarFetchFactory.build(dataset=dataset, cik=cik, http_status=404, payload_id=None)
         )
 
 
 async def test_a_fetch_other_than_not_found_needs_a_payload(ingest_session: AsyncSession) -> None:
     with pytest.raises(IntegrityError, match="edgar_fetches_payload_absent_on_not_found_check"):
-        await EdgarFetchRepository(ingest_session).add(
+        await PostgresEdgarFetchRepository(ingest_session).add(
             EdgarFetchFactory.build(http_status=200, payload_id=None)
         )
