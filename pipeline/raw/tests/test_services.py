@@ -7,7 +7,7 @@ import sqlalchemy as sa
 
 from pipeline.raw.models import EdgarDataset, EdgarFetch, EdgarPayload
 from pipeline.raw.repositories import EdgarFetchRepository, EdgarPayloadRepository
-from pipeline.raw.services import RawFetchService
+from pipeline.raw.services import EdgarFetchService
 from pipeline.sources.tests.factories import FetchedResponseFactory
 
 if TYPE_CHECKING:
@@ -20,13 +20,13 @@ BODY_SHA256 = bytes.fromhex("222b12d093f0ec3682d3e168e59a0e3bec3e623cdf812d01924
 
 
 def mocked_service(
-    *, inserted_id: int | None, existing_id: int
-) -> tuple[RawFetchService, AsyncMock, AsyncMock]:
+    *, inserted_id: int | None = 1, existing_id: int = 1
+) -> tuple[EdgarFetchService, AsyncMock, AsyncMock]:
     payloads = AsyncMock(spec=EdgarPayloadRepository)
     payloads.insert_if_absent.return_value = inserted_id
     payloads.get_id_by_sha256.return_value = existing_id
     fetches = AsyncMock(spec=EdgarFetchRepository)
-    return RawFetchService(payloads, fetches), payloads, fetches
+    return EdgarFetchService(payloads, fetches), payloads, fetches
 
 
 def added_fetch(fetches: AsyncMock) -> EdgarFetch:
@@ -35,7 +35,7 @@ def added_fetch(fetches: AsyncMock) -> EdgarFetch:
 
 
 async def test_a_new_body_is_stored_under_its_sha256() -> None:
-    service, payloads, _ = mocked_service(inserted_id=7, existing_id=1)
+    service, payloads, _ = mocked_service()
 
     await service.record_fetch(
         FetchedResponseFactory.build(
@@ -51,7 +51,7 @@ async def test_a_new_body_is_stored_under_its_sha256() -> None:
 
 
 async def test_a_new_body_links_the_fetch_to_the_inserted_payload() -> None:
-    service, _, fetches = mocked_service(inserted_id=7, existing_id=1)
+    service, _, fetches = mocked_service(inserted_id=7)
 
     await service.record_fetch(
         FetchedResponseFactory.build(status=200),
@@ -75,7 +75,7 @@ async def test_a_stored_body_links_the_fetch_to_the_existing_payload() -> None:
 
 
 async def test_a_not_found_fetch_stores_no_payload() -> None:
-    service, payloads, fetches = mocked_service(inserted_id=7, existing_id=1)
+    service, payloads, fetches = mocked_service()
 
     await service.record_fetch(
         FetchedResponseFactory.build(status=404, body=b"<html>Not found</html>"),
@@ -88,7 +88,7 @@ async def test_a_not_found_fetch_stores_no_payload() -> None:
 
 
 async def test_a_fetch_is_recorded_with_its_response_details() -> None:
-    service, _, fetches = mocked_service(inserted_id=7, existing_id=1)
+    service, _, fetches = mocked_service()
 
     await service.record_fetch(
         FetchedResponseFactory.build(
@@ -117,13 +117,17 @@ async def count_rows(session: AsyncSession, model: type[EdgarFetch | EdgarPayloa
 async def test_recording_the_same_body_twice_stores_one_payload_for_two_fetches(
     ingest_session: AsyncSession,
 ) -> None:
-    service = RawFetchService.from_session(ingest_session)
-    for _ in range(2):
-        await service.record_fetch(
-            FetchedResponseFactory.build(status=200, body=b'{"cik": "0000320193"}'),
-            dataset=EdgarDataset.SUBMISSIONS,
-            cik=320193,
-        )
+    service = EdgarFetchService.from_session(ingest_session)
+    await service.record_fetch(
+        FetchedResponseFactory.build(status=200, body=b'{"cik": "0000320193"}'),
+        dataset=EdgarDataset.SUBMISSIONS,
+        cik=320193,
+    )
+    await service.record_fetch(
+        FetchedResponseFactory.build(status=200, body=b'{"cik": "0000320193"}'),
+        dataset=EdgarDataset.SUBMISSIONS,
+        cik=320193,
+    )
 
     assert await count_rows(ingest_session, EdgarFetch) == 2
     assert await count_rows(ingest_session, EdgarPayload) == 1
@@ -132,7 +136,7 @@ async def test_recording_the_same_body_twice_stores_one_payload_for_two_fetches(
 async def test_a_not_found_fetch_is_recorded_with_a_null_payload_id(
     ingest_session: AsyncSession,
 ) -> None:
-    await RawFetchService.from_session(ingest_session).record_fetch(
+    await EdgarFetchService.from_session(ingest_session).record_fetch(
         FetchedResponseFactory.build(status=404, body=b"<html>Not found</html>"),
         dataset=EdgarDataset.COMPANY_FACTS,
         cik=1000045,

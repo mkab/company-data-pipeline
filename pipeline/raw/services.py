@@ -12,13 +12,13 @@ if TYPE_CHECKING:
     from pipeline.sources.http import FetchedResponse
 
 
-class RawFetchService:
+class EdgarFetchService:
     def __init__(self, payloads: EdgarPayloadRepository, fetches: EdgarFetchRepository) -> None:
         self.payloads = payloads
         self.fetches = fetches
 
     @classmethod
-    def from_session(cls, session: AsyncSession) -> RawFetchService:
+    def from_session(cls, session: AsyncSession) -> EdgarFetchService:
         return cls(EdgarPayloadRepository(session), EdgarFetchRepository(session))
 
     async def record_fetch(
@@ -32,7 +32,7 @@ class RawFetchService:
         """
         payload_id = None
         if response.status != HTTPStatus.NOT_FOUND:
-            payload_id = await self.store_payload(response.body)
+            payload_id = await self._store_payload(response.body)
         await self.fetches.add(
             EdgarFetch(
                 dataset=dataset,
@@ -44,7 +44,7 @@ class RawFetchService:
             )
         )
 
-    async def store_payload(self, body: bytes) -> int:
+    async def _store_payload(self, body: bytes) -> int:
         """Return the id of the payload with this body, inserting it when it is new.
 
         The hash is over the body bytes exactly as received,
