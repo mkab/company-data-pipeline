@@ -5,6 +5,7 @@ import sqlalchemy as sa
 
 from pipeline.database import include_managed_schemas, session_scope
 from pipeline.raw.models import EdgarPayload
+from pipeline.raw.tests.factories import EdgarPayloadFactory
 
 if TYPE_CHECKING:
     from alembic.runtime.environment import NameFilterType
@@ -43,7 +44,7 @@ async def count_payloads() -> int:
 
 async def add_a_payload_then_fail() -> None:
     async with session_scope() as session:
-        session.add(EdgarPayload(sha256=b"\x01", payload={}))
+        session.add(EdgarPayloadFactory.build())
         await session.flush()
         raise SessionScopeError
 
@@ -52,7 +53,7 @@ async def add_a_payload_then_fail() -> None:
 @pytest.mark.usefixtures("database_url_as_ingest")
 async def test_session_scope_commits_on_success() -> None:
     async with session_scope() as session:
-        session.add(EdgarPayload(sha256=b"\x01", payload={}))
+        session.add(EdgarPayloadFactory.build())
 
     assert await count_payloads() == 1
 
