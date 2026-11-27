@@ -12,7 +12,7 @@ from sqlalchemy.exc import IntegrityError
 
 from pipeline.raw.fetches import record_fetch
 from pipeline.raw.tables import EdgarDataset, edgar_fetches, edgar_payloads
-from pipeline.raw.tests.factories import FetchedResponseFactory
+from pipeline.sources.tests.factories import FetchedResponseFactory
 
 if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio import AsyncEngine
