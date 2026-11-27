@@ -1,4 +1,5 @@
 from enum import StrEnum
+from http import HTTPStatus
 
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import BYTEA, JSONB
@@ -45,11 +46,14 @@ edgar_fetches = sa.Table(
     sa.Column("payload_id", sa.BigInteger, sa.ForeignKey(edgar_payloads.c.id)),
     # The tickers file covers every company, the other datasets one company each
     sa.CheckConstraint(
-        "(cik IS NULL) = (dataset = 'company_tickers')", name="cik_set_per_company"
+        sa.column("cik").is_(None) == (sa.column("dataset") == EdgarDataset.COMPANY_TICKERS.value),
+        name="cik_set_per_company",
     ),
     # A 404 is the one recorded fetch with no body worth keeping ("no facts")
     sa.CheckConstraint(
-        "(payload_id IS NULL) = (http_status = 404)", name="payload_absent_on_not_found"
+        sa.column("payload_id").is_(None)
+        == (sa.column("http_status") == HTTPStatus.NOT_FOUND.value),
+        name="payload_absent_on_not_found",
     ),
     sa.Index(
         "edgar_fetches_dataset_cik_fetched_at_index",
