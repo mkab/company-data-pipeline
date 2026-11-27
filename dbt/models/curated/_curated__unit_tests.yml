@@ -1,0 +1,65 @@
+# Each test mocks the staging models the curated model reads
+unit_tests:
+  - name: facts_take_the_value_of_the_latest_filed_report
+    description: >
+      Apple's 2024 revenue is reported by the 10-K, then restated by a later 10-K's comparative.
+      The restated value wins, with the reporting filing of the later 10-K.
+      Its instant share count, reported once, is a fact of its own.
+    model: facts
+    given:
+      - input: ref('stg_edgar__fact_reports')
+        rows:
+          - {cik: 320193, taxonomy: us-gaap, concept: Revenues, unit: USD, period_start: "2023-10-01", period_end: "2024-09-28", value: 391035000000, accession_number: 0000320193-24-000123, fiscal_year: 2024, fiscal_period: FY, form: 10-K, filed: "2024-11-01", frame: CY2024}
+          - {cik: 320193, taxonomy: us-gaap, concept: Revenues, unit: USD, period_start: "2023-10-01", period_end: "2024-09-28", value: 391000000000, accession_number: 0000320193-25-000079, fiscal_year: 2025, fiscal_period: FY, form: 10-K, filed: "2025-10-31", frame: null}
+          - {cik: 320193, taxonomy: dei, concept: EntityCommonStockSharesOutstanding, unit: shares, period_start: null, period_end: "2025-10-17", value: 14776353000, accession_number: 0000320193-25-000079, fiscal_year: 2025, fiscal_period: FY, form: 10-K, filed: "2025-10-31", frame: CY2025Q3I}
+    expect:
+      rows:
+        - {cik: 320193, taxonomy: us-gaap, concept: Revenues, unit: USD, period_start: "2023-10-01", period_end: "2024-09-28", value: 391000000000, accession_number: 0000320193-25-000079, filed: "2025-10-31", form: 10-K, fiscal_year: 2025, fiscal_period: FY, frame: null}
+        - {cik: 320193, taxonomy: dei, concept: EntityCommonStockSharesOutstanding, unit: shares, period_start: null, period_end: "2025-10-17", value: 14776353000, accession_number: 0000320193-25-000079, filed: "2025-10-31", form: 10-K, fiscal_year: 2025, fiscal_period: FY, frame: CY2025Q3I}
+
+  - name: facts_break_a_tie_on_filed_with_the_highest_accession_number
+    description: >
+      Novo Nordisk files two 20-F amendments on the same day, each stating its 2024 revenue.
+      The highest accession number wins, compared as text.
+    model: facts
+    given:
+      - input: ref('stg_edgar__fact_reports')
+        rows:
+          - {cik: 353278, taxonomy: ifrs-full, concept: Revenue, unit: DKK, period_start: "2024-01-01", period_end: "2024-12-31", value: 290400000000, accession_number: 0000353278-25-000020, fiscal_year: 2024, fiscal_period: FY, form: 20-F/A, filed: "2025-03-05", frame: null}
+          - {cik: 353278, taxonomy: ifrs-full, concept: Revenue, unit: DKK, period_start: "2024-01-01", period_end: "2024-12-31", value: 290403000000, accession_number: 0001171843-25-001234, fiscal_year: 2024, fiscal_period: FY, form: 20-F/A, filed: "2025-03-05", frame: CY2024}
+    expect:
+      rows:
+        - {cik: 353278, taxonomy: ifrs-full, concept: Revenue, unit: DKK, period_start: "2024-01-01", period_end: "2024-12-31", value: 290403000000, accession_number: 0001171843-25-001234, filed: "2025-03-05", form: 20-F/A, fiscal_year: 2024, fiscal_period: FY, frame: CY2024}
+
+  - name: companies_are_the_tickers_file_plus_the_tracked_companies
+    description: >
+      Apple is tracked and in the tickers file: its name and details come from submissions.
+      Generation Essentials Group is tracked, absent from the tickers file and has no facts: it is still a company.
+      Berkshire Hathaway, with two tickers, is untracked: one row, its name from the tickers file and no details.
+    model: companies
+    given:
+      - input: ref('stg_edgar__company_tickers')
+        rows:
+          - {cik: 320193, name: Apple Inc., ticker: AAPL, exchange: Nasdaq}
+          - {cik: 1067983, name: BERKSHIRE HATHAWAY INC, ticker: BRK-B, exchange: NYSE}
+          - {cik: 1067983, name: BERKSHIRE HATHAWAY INC, ticker: BRK-A, exchange: NYSE}
+      - input: ref('stg_edgar__submissions')
+        rows:
+          - {cik: 320193, name: Apple Inc, entity_type: operating, sic: "3571", sic_description: Electronic Computers, fiscal_year_end: "0926", state_of_incorporation: CA}
+          - {cik: 2053456, name: Generation Essentials Group, entity_type: operating, sic: "7310", sic_description: Services-Advertising, fiscal_year_end: "0630", state_of_incorporation: E9}
+    expect:
+      rows:
+        - {cik: 320193, name: Apple Inc, is_tracked: true, entity_type: operating, sic: "3571", sic_description: Electronic Computers, fiscal_year_end: "0926", state_of_incorporation: CA}
+        - {cik: 1067983, name: BERKSHIRE HATHAWAY INC, is_tracked: false, entity_type: null, sic: null, sic_description: null, fiscal_year_end: null, state_of_incorporation: null}
+        - {cik: 2053456, name: Generation Essentials Group, is_tracked: true, entity_type: operating, sic: "7310", sic_description: Services-Advertising, fiscal_year_end: "0630", state_of_incorporation: E9}
+
+  - name: filings_link_to_their_index_page_in_the_edgar_archives
+    description: The link drops the leading zeros of the CIK and the dashes of the accession number in its path.
+    model: filings
+    given:
+      - input: ref('stg_edgar__filings')
+        rows:
+          - {cik: 19617, accession_number: 0001628280-26-008131, form: 10-K, filing_date: "2026-02-13", report_date: "2025-12-31", accepted_at: "2026-02-13 16:20:00+00", primary_document: jpm-20251231.htm, is_xbrl: true, is_inline_xbrl: true}
+    expect:
+      rows:
+        - {cik: 19617, accession_number: 0001628280-26-008131, form: 10-K, filing_date: "2026-02-13", report_date: "2025-12-31", accepted_at: "2026-02-13 16:20:00+00", primary_document: jpm-20251231.htm, is_xbrl: true, is_inline_xbrl: true, filing_url: "https://www.sec.gov/Archives/edgar/data/19617/000162828026008131/0001628280-26-008131-index.htm"}

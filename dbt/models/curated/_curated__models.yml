@@ -1,0 +1,229 @@
+# Curated holds the business entities the API serves, with the rules applied.
+# Every model is a table rebuilt in full each run, under an enforced contract (dbt_project.yml):
+# the build fails when a column's name or type differs from the one declared here.
+# The primary key constraints make the keys not null in the database too, which the API's drift check reads
+models:
+  - name: companies
+    description: >
+      One row per company: every company in the tickers file, plus every tracked company,
+      which may be absent from it.
+      A tracked company is one the pipeline loads submissions for, and only it has details beyond its name.
+    constraints:
+      - type: primary_key
+        columns: [cik]
+    columns:
+      - name: cik
+        description: The company's CIK.
+        data_type: bigint
+        data_tests: [not_null, unique]
+      - name: name
+        description: The company's current name from its submissions when tracked, else from the tickers file.
+        data_type: text
+      - name: is_tracked
+        description: Whether the pipeline loads the company's submissions, filings and facts.
+        data_type: boolean
+      - name: entity_type
+        description: EDGAR's kind of filer, such as `operating`, null when untracked.
+        data_type: text
+      - name: sic
+        description: The Standard Industrial Classification code, as text, null when untracked.
+        data_type: text
+      - name: sic_description
+        description: The industry the SIC code names, null when untracked.
+        data_type: text
+      - name: fiscal_year_end
+        description: The month and day the fiscal year ends, as `MMDD`, null when untracked.
+        data_type: text
+      - name: state_of_incorporation
+        description: The state or country code of incorporation, null when untracked.
+        data_type: text
+
+  - name: company_tickers
+    description: One row per ticker of a company, from the tickers file only. A company can have several tickers, or none.
+    constraints:
+      - type: primary_key
+        columns: [cik, ticker]
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [cik, ticker]
+    columns:
+      - name: cik
+        description: The CIK of the company the ticker is listed against.
+        data_type: bigint
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('companies')
+                field: cik
+      - name: ticker
+        description: The trading symbol.
+        data_type: text
+        data_tests: [not_null]
+      - name: exchange
+        description: The exchange the ticker trades on, null when the tickers file names none.
+        data_type: text
+
+  - name: filings
+    description: >
+      One row per filing of a tracked company, every form, from `filings.recent` of its latest submissions:
+      the latest thousand filings or the last year of them.
+      Co-registrants share an accession number, so a filing is a company and an accession number.
+    constraints:
+      - type: primary_key
+        columns: [cik, accession_number]
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [cik, accession_number]
+    columns:
+      - name: cik
+        description: The filing company's CIK.
+        data_type: bigint
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('companies')
+                field: cik
+      - name: accession_number
+        description: The SEC's identifier of the filing.
+        data_type: text
+        data_tests: [not_null]
+      - name: form
+        description: The form type, such as `10-K`, `20-F` or `8-K`.
+        data_type: text
+      - name: filing_date
+        description: The day the filing was filed.
+        data_type: date
+      - name: report_date
+        description: The end of the period the filing reports on, null when it reports on none.
+        data_type: date
+      - name: accepted_at
+        description: When EDGAR accepted the filing.
+        data_type: timestamp with time zone
+      - name: primary_document
+        description: The file name of the filing's main document.
+        data_type: text
+      - name: is_xbrl
+        description: Whether the filing carries XBRL.
+        data_type: boolean
+      - name: is_inline_xbrl
+        description: Whether the filing carries inline XBRL.
+        data_type: boolean
+      - name: filing_url
+        description: The filing's index page in the EDGAR archives, which links every document of the filing.
+        data_type: text
+
+  - name: concepts
+    description: >
+      One row per concept a fact report uses, every taxonomy included,
+      with its label and description from the latest filed report.
+    constraints:
+      - type: primary_key
+        columns: [taxonomy, concept]
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [taxonomy, concept]
+    columns:
+      - name: taxonomy
+        description: The taxonomy the concept belongs to, such as `us-gaap`, `ifrs-full` or `dei`.
+        data_type: text
+        data_tests: [not_null]
+      - name: concept
+        description: The concept's name in its taxonomy, such as `Revenues`.
+        data_type: text
+        data_tests: [not_null]
+      - name: label
+        description: The concept's label, null when EDGAR gives none.
+        data_type: text
+      - name: description
+        description: The concept's description, null when EDGAR gives none.
+        data_type: text
+
+  - name: facts
+    description: >
+      One row per fact: a tracked company's value for one concept, unit and period, every taxonomy included.
+      A fact is usually reported by several filings; the latest filed report states it,
+      and on a tie on `filed` the highest accession number.
+      The other columns describe that winning report.
+      A company with no company facts has no rows.
+      There is no relationship to `filings`: facts go back to 2009,
+      while `filings` holds only `filings.recent`, so most reporting filings are absent from it.
+    constraints:
+      - type: primary_key
+        columns: [fact_key]
+    data_tests:
+      - relationships_composite:
+          arguments:
+            columns: [taxonomy, concept]
+            to: ref('concepts')
+    columns:
+      - name: fact_key
+        description: >
+          A hash of the grain (`cik`, `taxonomy`, `concept`, `unit`, `period_start`, `period_end`),
+          which holds the null `period_start` of an instant fact, so the grain can be a key.
+        data_type: text
+        data_tests: [not_null, unique]
+      - name: cik
+        description: The company's CIK.
+        data_type: bigint
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('companies')
+                field: cik
+      - name: taxonomy
+        description: The taxonomy of the concept, such as `us-gaap`, `ifrs-full` or `dei`.
+        data_type: text
+        data_tests: [not_null]
+      - name: concept
+        description: The concept the value is tagged with, such as `Revenues`.
+        data_type: text
+        data_tests: [not_null]
+      - name: unit
+        description: The unit of the value, such as `USD`, `shares` or `USD/shares`.
+        data_type: text
+        data_tests: [not_null]
+      - name: period_start
+        description: The first day of the period, null for an instant fact (a value at a date).
+        data_type: date
+      - name: period_end
+        description: The last day of the period, or the date of an instant fact.
+        data_type: date
+        data_tests: [not_null]
+      - name: value
+        description: The value, at full precision.
+        data_type: numeric
+        data_tests: [not_null]
+      - name: accession_number
+        description: The accession number of the filing that states the fact.
+        data_type: text
+      - name: filed
+        description: The day the filing that states the fact was filed.
+        data_type: date
+      - name: form
+        description: The form type of the filing that states the fact.
+        data_type: text
+      - name: fiscal_year
+        description: >
+          The fiscal year of the filing that states the fact, not of the period:
+          a 10-K's comparative for the year before carries the 10-K's own fiscal year.
+        data_type: integer
+      - name: fiscal_period
+        description: >
+          The fiscal period (`FY`, `Q1` to `Q4`, `H1`, `H2`) of the filing that states the fact, not of the period,
+          null when EDGAR gives none.
+        data_type: text
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [FY, Q1, Q2, Q3, Q4, H1, H2]
+              config:
+                severity: warn
+      - name: frame
+        description: The calendar frame EDGAR aligns the fact to, such as `CY2024Q4I`, null when it aligns none.
+        data_type: text
