@@ -20,7 +20,7 @@ repository  reads and writes the database, nothing else       (no business rules
 
 - A router calls a usecase, or a service directly when the action needs only one.
 - Business rules live in usecases and services, never in routers or repositories.
-- A service depends on repository `Protocol`s, never on a concrete repository. The Postgres implementations (`Postgres...Repository`) satisfy them in the application, and in-memory fakes (`Fake...Repository`, in the package's `tests/fakes.py`) in unit tests.
+- A service depends on repository `Protocol`s (in the package's `protocols.py`), never on a concrete repository (in its `repositories.py`). The Postgres implementations (`Postgres...Repository`) satisfy them in the application, and in-memory fakes (`Fake...Repository`, in the package's `tests/fakes.py`) in unit tests.
 - Models are declarative: every table is a class inheriting from `pipeline.database.ModelBase` (a `DeclarativeBase`), which carries the standard columns.
 - Repositories and services are small classes that take their dependencies in `__init__`, so a FastAPI dependency and the CLI build them the same way.
   A service may add a `from_session(session)` classmethod that builds its repositories over one session, the shortcut both callers use.

@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio import AsyncSession
 
     from pipeline.raw.enums import EdgarDataset
-    from pipeline.raw.repositories import EdgarFetchRepository, EdgarPayloadRepository
+    from pipeline.raw.protocols import EdgarFetchRepository, EdgarPayloadRepository
     from pipeline.sources.http import FetchedResponse
 
 
