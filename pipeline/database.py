@@ -68,6 +68,7 @@ def get_engine() -> AsyncEngine:
 
 @cache
 def get_sessionmaker() -> async_sessionmaker[AsyncSession]:
+    """Return the session factory over `get_engine()`, created on first call."""
     return async_sessionmaker(get_engine(), expire_on_commit=False)
 
 

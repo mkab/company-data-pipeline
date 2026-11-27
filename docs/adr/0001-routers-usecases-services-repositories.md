@@ -22,8 +22,9 @@ repository  reads and writes the database, nothing else       (no business rules
 - Business rules live in usecases and services, never in routers or repositories.
 - Models are declarative: every table is a class inheriting from `pipeline.database.ModelBase` (a `DeclarativeBase`), which carries the standard columns.
 - Repositories and services are small classes that take their dependencies in `__init__`, so a FastAPI dependency and the CLI build them the same way.
+  A service may add a `from_session(session)` classmethod that builds its repositories over one session, the shortcut both callers use.
 - **Transactions**: `pipeline.database.session_scope()` is the one place a session is opened, committed on success and rolled back on error (the error is re-raised, never swallowed).
-  The outermost caller opens it: a `get_session` dependency for a route, the usecase for the CLI.
+  The outermost caller opens it: for a route, a `get_session` dependency (added with the first route that reads the database, #24), and for the CLI, its entry point (a usecase, or the command itself when it calls one service).
   Services and repositories take the session and never commit, so a usecase that calls two services stays one transaction.
 
 ## Testing
@@ -35,4 +36,4 @@ repository  reads and writes the database, nothing else       (no business rules
 ## Consequences
 
 - More files for a small feature (`models.py`, `repositories.py`, `services.py`), in exchange for one obvious place for each kind of code.
-- Tests can pass in a session for any role, since nothing below the outermost caller opens one: the raw tests run as `ingest`.
+- Tests can pass in a session for any role, since nothing below the outermost caller opens one: the raw tests open their own session as `ingest`, the one place outside `session_scope()` a session is opened.
