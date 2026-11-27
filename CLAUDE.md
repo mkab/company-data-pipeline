@@ -20,8 +20,11 @@ make outdated            # list direct dependencies with a newer release
 make upgrade [PACKAGE=]  # upgrade the lock (one package or all), sync, rebuild
 make migrate             # alembic upgrade head, in the app container
 make migration MSG=      # autogenerate a migration, in the app container
-make migrations-check    # upgrade head, alembic check, downgrade base, upgrade head (empties the dev database)
+make migrations-check    # drop dbt's schemas, then upgrade head, alembic check, downgrade base, upgrade head (empties the dev database)
 make ingest              # fetch the tickers file and the tracked companies (`config/tracked_companies.toml`) into raw, as the ingest role (needs EDGAR_USER_AGENT)
+make seed-test           # migrate pipeline_test and load the committed EDGAR fixtures (`pipeline/seed_test/fixtures`) into its raw, as the ingest role
+make dbt [ARGS=]         # dbt in its container, as the dbt role (default `build`; `ARGS="build --target test"` after seed-test)
+make pipeline            # make ingest, then dbt build
 make lint                # ruff format --check, ruff check, mypy (no fixes), lint-migrations, on the host
 make lint-migrations     # Squawk over each revision's offline SQL (`.squawk.toml`), on the host
 make format              # ruff format, ruff check --fix, on the host
@@ -30,10 +33,10 @@ make covtest [ARGS=]     # coverage HTML report -> htmlcov/index.html (fail_unde
 make record-cassettes    # re-record the EDGAR cassettes against the real SEC (needs EDGAR_USER_AGENT), by hand only
 ```
 
-Everything that touches the database runs in a container, and `make up` never starts the one-off `ingest` and `dbt` services (they sit behind Compose profiles).
+Everything that touches the database runs in a container, and `make up` never starts the one-off `ingest`, `seed-test` and `dbt` services (they sit behind Compose profiles).
 Each service connects with its own role (`ingest`, `dbt`, `api`, created by `docker/initdb` on an empty volume) through `DATABASE_URL`, and Alembic connects as the owner through `MIGRATIONS_DATABASE_URL`.
 
-CI (`.github/workflows/ci.yml`) runs the jobs `lint`, `tests` and `pr-title` on every PR, and `tests` again on the merge to `main`; the ruleset on `main` requires all three. A job renamed in the workflow is renamed in the ruleset too.
+CI (`.github/workflows/ci.yml`) runs the jobs `lint`, `tests`, `dbt` and `pr-title` on every PR, and `tests` and `dbt` again on the merge to `main`; the ruleset on `main` requires all four. A job renamed in the workflow is renamed in the ruleset too.
 
 The pre-commit hook runs `make format` and mypy on any commit touching Python, `make lint-migrations` on any commit touching `migrations/`, and the commit-msg hook (`bin/check-commit-msg.sh`) refuses a message without an allowed prefix. Never bypass them with `--no-verify`.
 
@@ -77,6 +80,8 @@ The judgement rules (backward compatibility, drops over several releases, a roll
 pytest. Test data comes from factories (factory_boy), in a `factories.py` next to the tests of the package whose rows they build. A test calls a factory with the fields it relies on, as literals. A fixture is a named scenario several tests reuse; the root `conftest.py` holds no test data, only global patches and shared utilities.
 
 Tests never call a real external source: they run against recorded or mocked responses.
+
+dbt models are tested by dbt, never by pytest: `make seed-test && make dbt ARGS="build --target test"`. A model's logic is covered by dbt unit tests (mocked raw rows, `_<source>__unit_tests.yml` next to the models), and its keys by data tests over the seeded fixtures. pytest empties raw at the start of a session, so `make tests` clears what `seed-test` loaded.
 
 **A rule is tested at the deepest module that owns it.** An HTTP test covers only what the route adds: the response shape, auth, status codes and the wiring to that module, not every case of the rule behind it.
 
