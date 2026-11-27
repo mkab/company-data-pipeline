@@ -21,6 +21,7 @@ make upgrade [PACKAGE=]  # upgrade the lock (one package or all), sync, rebuild
 make migrate             # alembic upgrade head, in the app container
 make migration MSG=      # autogenerate a migration, in the app container
 make migrations-check    # upgrade head, alembic check, downgrade base, upgrade head (empties the dev database)
+make ingest              # fetch the tickers file and the tracked companies (`config/tracked_companies.toml`) into raw, as the ingest role (needs EDGAR_USER_AGENT)
 make lint                # ruff format --check, ruff check, mypy (no fixes), lint-migrations, on the host
 make lint-migrations     # Squawk over each revision's offline SQL (`.squawk.toml`), on the host
 make format              # ruff format, ruff check --fix, on the host
