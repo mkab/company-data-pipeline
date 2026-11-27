@@ -22,10 +22,18 @@ logger = logging.getLogger(__name__)
 
 @dataclass(frozen=True)
 class FailedFetch:
-    """A fetch the run could not record. `cik` is `None` for the tickers file."""
+    """A fetch the run could not record.
+
+    `cik` is `None` for the tickers file.
+    """
 
     dataset: EdgarDataset
     cik: int | None
+
+    def describe(self) -> str:
+        if self.cik is None:
+            return str(self.dataset)
+        return f"{self.dataset} for CIK {self.cik}"
 
 
 async def run_ingest(
@@ -37,52 +45,55 @@ async def run_ingest(
     A fetch EDGAR refuses, that stays unavailable, or whose payload is not the expected one
     is recorded nowhere and comes back in the returned list,
     while the run carries on with the others.
+
+    A database error is not a fetch failure:
+    it is raised, and stops the run.
     """
-    failed_fetches: list[FailedFetch] = []
-    await fetch_and_record(
-        edgar.get_tickers,
-        dataset=EdgarDataset.COMPANY_TICKERS,
-        cik=None,
-        failed_fetches=failed_fetches,
+    tickers_failure = await fetch_and_record(
+        edgar.get_tickers, FailedFetch(dataset=EdgarDataset.COMPANY_TICKERS, cik=None)
     )
     async with asyncio.TaskGroup() as task_group:
-        for company in tracked_companies:
-            task_group.create_task(ingest_company(edgar, company.cik, failed_fetches))
+        company_tasks = [
+            task_group.create_task(ingest_company(edgar, company.cik))
+            for company in tracked_companies
+        ]
+    failed_fetches = [] if tickers_failure is None else [tickers_failure]
+    for task in company_tasks:
+        failed_fetches.extend(task.result())
     return failed_fetches
 
 
-async def ingest_company(edgar: EdgarClient, cik: int, failed_fetches: list[FailedFetch]) -> None:
-    await fetch_and_record(
-        lambda: edgar.get_submissions(cik),
-        dataset=EdgarDataset.SUBMISSIONS,
-        cik=cik,
-        failed_fetches=failed_fetches,
-    )
-    await fetch_and_record(
-        lambda: edgar.get_company_facts(cik),
-        dataset=EdgarDataset.COMPANY_FACTS,
-        cik=cik,
-        failed_fetches=failed_fetches,
-    )
+async def ingest_company(edgar: EdgarClient, cik: int) -> list[FailedFetch]:
+    """Fetch and record one company's datasets, and return the fetches that failed."""
+    outcomes = [
+        await fetch_and_record(
+            lambda: edgar.get_submissions(cik),
+            FailedFetch(dataset=EdgarDataset.SUBMISSIONS, cik=cik),
+        ),
+        await fetch_and_record(
+            lambda: edgar.get_company_facts(cik),
+            FailedFetch(dataset=EdgarDataset.COMPANY_FACTS, cik=cik),
+        ),
+    ]
+    return [outcome for outcome in outcomes if outcome is not None]
 
 
 async def fetch_and_record(
-    fetch: Callable[[], Awaitable[FetchedResponse]],
-    *,
-    dataset: EdgarDataset,
-    cik: int | None,
-    failed_fetches: list[FailedFetch],
-) -> None:
-    """Record the response `fetch` returns, or add the fetch to `failed_fetches`."""
+    fetch: Callable[[], Awaitable[FetchedResponse]], failure: FailedFetch
+) -> FailedFetch | None:
+    """Record the response `fetch` returns.
+
+    Return `failure` when there is no response to record, and `None` otherwise.
+    """
     try:
         response = await fetch()
     except (SourceRefusedError, SourceUnavailableError, UnexpectedPayloadError) as error:
-        logger.error("Could not fetch %s for CIK %s: %s", dataset, cik, error)
-        failed_fetches.append(FailedFetch(dataset=dataset, cik=cik))
-        return
+        logger.error("Could not fetch %s: %s", failure.describe(), error)
+        return failure
     if response.status == HTTPStatus.NOT_FOUND:
-        logger.info("CIK %s has no %s", cik, dataset)
+        logger.info("CIK %s has no %s", failure.cik, failure.dataset)
     async with session_scope() as session:
         await EdgarFetchService.from_session(session).record_fetch(
-            response, dataset=dataset, cik=cik
+            response, dataset=failure.dataset, cik=failure.cik
         )
+    return None
