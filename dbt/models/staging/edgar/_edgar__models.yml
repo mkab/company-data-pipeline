@@ -64,7 +64,7 @@ models:
       - name: report_date
         description: The period the filing reports on, null when it reports on none.
       - name: accepted_at
-        description: When EDGAR accepted the filing.
+        description: When EDGAR accepted the filing, in UTC.
       - name: act
         description: The securities act the filing is made under.
       - name: file_number
