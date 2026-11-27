@@ -15,6 +15,20 @@ models:
     staging:
       +schema: staging
       +materialized: view
+    # Curated is what the api role reads: tables rebuilt in full every run,
+    # each pinned by a contract so a column change fails the build
+    curated:
+      +schema: curated
+      +materialized: table
+      +contract:
+        enforced: true
+      # `api` is the role the API connects as, created by docker/initdb
+      +grants:
+        select: [api]
+
+# Model grants cover the tables; reading them also needs usage on the schema
+on-run-end:
+  - "{{ grant_curated_schema_usage() }}"
 
 flags:
   send_anonymous_usage_stats: false
