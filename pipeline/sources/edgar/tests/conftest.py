@@ -5,7 +5,8 @@ import pytest
 from pipeline.settings import EdgarSettings
 from pipeline.sources.edgar.client import EdgarClient
 
-# Replaying a cassette matches requests on method and URL only, so any User-Agent does
+# Replaying a cassette matches requests on method and URL only,
+# so any User-Agent does
 REPLAY_USER_AGENT = "Replay replay@example.com"
 
 

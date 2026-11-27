@@ -16,17 +16,20 @@ if TYPE_CHECKING:
     from pipeline.settings import EdgarSettings
     from pipeline.sources.http import FetchedResponse
 
-# SEC fair access: "no more than 10 requests per second", per user and across all machines
-# (https://www.sec.gov/about/developer-resources).
+# SEC fair access: "no more than 10 requests per second",
+# per user and across all machines (https://www.sec.gov/about/developer-resources).
 # Half of it leaves room for anything else sharing the IP address
 EDGAR_REQUESTS_PER_SECOND = 5
 EDGAR_MAX_IN_FLIGHT = 5
 
-# The cap is for both hosts together, so one client (one limiter) serves both
-WWW_HOST = "https://www.sec.gov"
-DATA_HOST = "https://data.sec.gov"
+# The cap is for both hosts together,
+# so one client (one limiter) serves both
+WWW_BASE_URL = "https://www.sec.gov"
+DATA_BASE_URL = "https://data.sec.gov"
 
-TICKERS_URL = f"{WWW_HOST}/files/company_tickers_exchange.json"
+TICKERS_URL = f"{WWW_BASE_URL}/files/company_tickers_exchange.json"
+
+SOURCE_NAME = "SEC EDGAR"
 
 
 class UnexpectedPayloadError(Exception):
@@ -36,7 +39,7 @@ class UnexpectedPayloadError(Exception):
 def edgar_source_settings(user_agent: str) -> SourceSettings:
     """Return how EDGAR is called, with the User-Agent SEC asks for."""
     return SourceSettings(
-        name="SEC EDGAR",
+        name=SOURCE_NAME,
         user_agent=user_agent,
         requests_per_second=EDGAR_REQUESTS_PER_SECOND,
         max_in_flight=EDGAR_MAX_IN_FLIGHT,
@@ -44,11 +47,11 @@ def edgar_source_settings(user_agent: str) -> SourceSettings:
 
 
 def submissions_url(cik: int) -> str:
-    return f"{DATA_HOST}/submissions/CIK{cik:010d}.json"
+    return f"{DATA_BASE_URL}/submissions/CIK{cik:010d}.json"
 
 
 def company_facts_url(cik: int) -> str:
-    return f"{DATA_HOST}/api/xbrl/companyfacts/CIK{cik:010d}.json"
+    return f"{DATA_BASE_URL}/api/xbrl/companyfacts/CIK{cik:010d}.json"
 
 
 def check_envelope(response: FetchedResponse, envelope: type[pydantic.BaseModel]) -> None:
@@ -57,7 +60,7 @@ def check_envelope(response: FetchedResponse, envelope: type[pydantic.BaseModel]
         envelope.model_validate_json(response.body)
     except pydantic.ValidationError as error:
         raise UnexpectedPayloadError(
-            f"SEC EDGAR returned an unexpected payload for {response.url}"
+            f"{SOURCE_NAME} returned an unexpected payload for {response.url}"
         ) from error
 
 

@@ -247,7 +247,8 @@ async def test_no_more_requests_are_in_flight_than_the_source_allows() -> None:
         nonlocal in_flight, peak_in_flight
         in_flight += 1
         peak_in_flight = max(peak_in_flight, in_flight)
-        await asyncio.sleep(0.01)
+        # Hands control to the other tasks, so every request the semaphore lets in is in flight
+        await asyncio.sleep(0)
         in_flight -= 1
         return httpx2.Response(200, content=b"{}")
 

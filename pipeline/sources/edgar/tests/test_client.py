@@ -13,6 +13,12 @@ from pipeline.sources.http import SourceClient, SourceRefusedError
 TICKERS_FIXTURE = Path(__file__).parent / "fixtures" / "company_tickers_exchange.json"
 CASSETTES = Path(__file__).parent / "cassettes" / "test_client"
 
+# Arxis, Inc.: a recent IPO,
+# so among the smallest companyfacts a listed filer has
+SMALL_FILER_CIK = 2093536
+# Generation Essentials Group: listed on NYSE, but SEC has no XBRL facts for it
+NO_FACTS_CIK = 2053456
+
 
 class FixedSource:
     """Answers every request with the same response, and keeps the requests it saw."""
@@ -109,12 +115,6 @@ async def test_a_company_facts_refusal_other_than_404_is_raised() -> None:
             await edgar.get_company_facts(320193)
 
 
-# Arxis, Inc.: a recent IPO, so among the smallest companyfacts a listed filer has
-SMALL_FILER_CIK = 2093536
-# Generation Essentials Group: listed on NYSE, but SEC has no XBRL facts for it
-NO_FACTS_CIK = 2053456
-
-
 @pytest.mark.vcr
 @pytest.mark.anyio
 async def test_a_small_filers_submissions_come_back_as_received(edgar: EdgarClient) -> None:
@@ -159,3 +159,11 @@ def test_no_cassette_holds_a_user_agent(cassette: str) -> None:
     text = (CASSETTES / cassette).read_text()
 
     assert "user-agent" not in text.lower()
+
+
+def test_the_user_agent_check_covers_every_cassette() -> None:
+    assert sorted(path.name for path in CASSETTES.iterdir()) == [
+        "test_a_company_with_no_facts_comes_back_as_its_404.yaml",
+        "test_a_small_filers_company_facts_come_back_as_received.yaml",
+        "test_a_small_filers_submissions_come_back_as_received.yaml",
+    ]

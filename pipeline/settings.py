@@ -29,7 +29,8 @@ class EdgarSettings(BaseSettings):
 
     `EDGAR_USER_AGENT` is the name and contact email SEC asks every client to send.
     It has no default, and an empty value counts as missing.
-    It is kept apart from `Settings`, so the API starts without it.
+    It is kept apart from `Settings`,
+    so the API starts without it.
     """
 
     edgar_user_agent: str = Field(min_length=1)

@@ -24,6 +24,7 @@ class SubmissionsEnvelope(BaseModel):
 class CompanyFactsEnvelope(BaseModel):
     """`api/xbrl/companyfacts/CIK##########.json`: the company and its facts by taxonomy."""
 
-    cik: int
+    # A number for some companies, a zero-padded string for others
+    cik: int | str
     entity_name: str = Field(alias="entityName")
     facts: dict[str, object]

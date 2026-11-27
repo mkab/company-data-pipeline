@@ -112,5 +112,6 @@ covtest:
 
 .PHONY: record-cassettes
 record-cassettes:
-	@# Calls SEC EDGAR for real, so it is run by hand and never in CI
+	@# Calls SEC EDGAR for real,
+	@# so it is run by hand and never in CI
 	$(APP_RUN) sh -c 'test -n "$$EDGAR_USER_AGENT" || { echo "EDGAR_USER_AGENT is required in .env"; exit 1; }; pytest -v -m vcr --record-mode=rewrite pipeline/sources/edgar'
