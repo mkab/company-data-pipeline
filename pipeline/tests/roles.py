@@ -8,6 +8,8 @@ import sqlalchemy as sa
 from sqlalchemy import make_url
 from sqlalchemy.ext.asyncio import create_async_engine
 
+import pipeline.raw.models  # noqa: F401  # registers the raw tables on `alembic_metadata`
+from pipeline.database import RAW_SCHEMA, alembic_metadata
 from pipeline.settings import get_migration_settings, get_settings
 
 if TYPE_CHECKING:
@@ -41,10 +43,13 @@ async def connecting_as(role: str) -> AsyncIterator[AsyncEngine]:
 
 
 async def empty_raw_tables() -> None:
-    """Empty the raw tables as the owner, since no service role may delete."""
+    """Empty every raw table as the owner, since no service role may delete.
+
+    Children before parents, so no foreign key blocks a delete.
+    """
     engine = create_async_engine(get_migration_settings().migrations_database_url)
     async with engine.begin() as connection:
-        await connection.execute(
-            sa.text("TRUNCATE raw.edgar_fetches, raw.edgar_payloads RESTART IDENTITY")
-        )
+        for table in reversed(alembic_metadata.sorted_tables):
+            if table.schema == RAW_SCHEMA:
+                await connection.execute(sa.delete(table))
     await engine.dispose()
