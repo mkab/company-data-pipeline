@@ -39,6 +39,8 @@ The pre-commit hook runs `make format` and mypy on any commit touching Python, `
 
 Ruff (`pyproject.toml`) enforces most of these, plus no naive datetimes (`DTZ`), no blind `except Exception` (`BLE`) and no commented-out code (`ERA`).
 
+- **Layers: router, usecase, service, repository** (`docs/adr/0001-routers-usecases-services-repositories.md`). Business rules live in usecases and services; repositories only query.
+- **Tables are declarative models** inheriting from `pipeline.database.ModelBase`, never Core `sa.Table`s. `ModelBase` and `DeclarativeBase` are in ruff's `runtime-evaluated-base-classes`, since SQLAlchemy reads `Mapped[...]` at runtime.
 - **Never build SQL from strings.** Every value reaches the database as a bound parameter, never by f-string, `%` or `.format()` into the statement (ruff `S608`). This covers the Python code; dbt models are SQL by design and take values through `ref`, `source` and `var`, not string building.
 - **Types: strict mypy.** Every first-party module is fully annotated, and no module is relaxed by a `[[tool.mypy.overrides]]` entry. Overrides are only for third-party packages that ship no types. A `# type: ignore` names its error code and a comment says why.
 - **Names used only in type hints are imported under `if TYPE_CHECKING:`**, and the annotation stays unquoted (ruff strict `TC001`-`TC004`, `UP037`). Exception: FastAPI and pydantic read annotations at runtime, so a name in a route or dependency signature, or in a pydantic model, must be a real import. `pydantic.BaseModel` is listed in ruff's `runtime-evaluated-base-classes`; a new runtime reader is added there.
