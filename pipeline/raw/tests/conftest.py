@@ -1,3 +1,4 @@
+import contextlib
 import os
 from typing import TYPE_CHECKING
 
@@ -30,19 +31,25 @@ def role_database_url(role: str) -> str:
     )
 
 
+@contextlib.asynccontextmanager
+async def connecting_as(role: str) -> AsyncIterator[AsyncEngine]:
+    """Yield an engine connecting to the test database as `role`, disposed of on exit."""
+    engine = create_async_engine(role_database_url(role))
+    yield engine
+    await engine.dispose()
+
+
 @pytest.fixture
 async def role_engine(request: pytest.FixtureRequest) -> AsyncIterator[AsyncEngine]:
     """Yield an engine connecting as the role the test is parametrized with (`indirect=True`)."""
-    engine = create_async_engine(role_database_url(request.param))
-    yield engine
-    await engine.dispose()
+    async with connecting_as(request.param) as engine:
+        yield engine
 
 
 @pytest.fixture
 async def ingest_engine() -> AsyncIterator[AsyncEngine]:
-    engine = create_async_engine(role_database_url("ingest"))
-    yield engine
-    await engine.dispose()
+    async with connecting_as("ingest") as engine:
+        yield engine
 
 
 @pytest.fixture(autouse=True)
