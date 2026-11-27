@@ -21,6 +21,9 @@ help:
 	@echo "                 	(the downgrade empties the development database)"
 	@echo "  ingest         	fetch the tickers file and every tracked company's datasets from SEC EDGAR into raw"
 	@echo "                 	(EDGAR_USER_AGENT is required in .env)"
+	@echo "  dbt            	run dbt in its container (ARGS=<dbt command and options>, build by default)"
+	@echo "                 	(ARGS=\"build --target test\" builds against the test database, after seed-test)"
+	@echo "  pipeline       	ingest, then dbt build"
 	@echo "  lint           	run the code linters, without fixing anything (lint-migrations included)"
 	@echo "  lint-migrations	lint the SQL of every migration revision with Squawk"
 	@echo "  format         	reformat code and apply the safe lint fixes"
@@ -91,6 +94,16 @@ migrations-check:
 ingest:
 	@# The `ingest` service connects as the ingest role, the one that may write raw
 	docker compose run --rm ingest python -m pipeline.ingest
+
+.PHONY: dbt
+dbt:
+	@# The `dbt` service connects as the dbt role, which reads raw and owns staging and curated
+	docker compose run --rm dbt dbt $(or $(ARGS),build)
+
+.PHONY: pipeline
+pipeline:
+	$(MAKE) ingest
+	$(MAKE) dbt ARGS=build
 
 .PHONY: lint
 lint:

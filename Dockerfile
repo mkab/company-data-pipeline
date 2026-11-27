@@ -32,9 +32,15 @@ COPY . .
 # dbt and its Postgres adapter only
 FROM base AS dbt
 
+# Outside /app, like the venv, so the bind mount of the source in Compose does not hide them
+ENV DBT_PACKAGES_INSTALL_PATH=/opt/dbt_packages
+
 RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,source=uv.lock,target=uv.lock \
     --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
     uv sync --locked --no-install-project --only-group dbt
 
 COPY . .
+
+# The packages pinned in dbt/packages.yml and dbt/package-lock.yml
+RUN dbt deps --project-dir dbt

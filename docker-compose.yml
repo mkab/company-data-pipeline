@@ -54,7 +54,12 @@ services:
       target: dbt
     env_file: .env
     environment:
+      DBT_PROJECT_DIR: /app/dbt
       DBT_PROFILES_DIR: /app/dbt
+      # Read by dbt/profiles.yml, with DBT_DB_PASSWORD and POSTGRES_DB from `.env`
+      DBT_DB_HOST: db
+      DBT_DB_PORT: "5432"
+      DBT_DB_USER: dbt
     volumes:
       - .:/app
     depends_on:

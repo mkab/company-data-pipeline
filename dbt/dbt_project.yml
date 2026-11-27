@@ -1,0 +1,20 @@
+name: company_data_pipeline
+version: "1.0.0"
+profile: company_data_pipeline
+
+model-paths: ["models"]
+macro-paths: ["macros"]
+# The dbt image installs the packages at build time, outside /app,
+# so the bind mount of the source in Compose does not hide them
+packages-install-path: "{{ env_var('DBT_PACKAGES_INSTALL_PATH', 'dbt_packages') }}"
+clean-targets: ["target"]
+
+# Each layer is its own schema, named exactly (see macros/generate_schema_name.sql)
+models:
+  company_data_pipeline:
+    staging:
+      +schema: staging
+      +materialized: view
+
+flags:
+  send_anonymous_usage_stats: false
