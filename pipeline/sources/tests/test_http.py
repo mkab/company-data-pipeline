@@ -137,6 +137,22 @@ async def test_a_rate_limit_or_server_error_is_retried(status: int) -> None:
 
 
 @pytest.mark.anyio
+async def test_a_429_with_retry_after_is_retried() -> None:
+    source = ScriptedSource(
+        [
+            httpx2.Response(429, headers={"Retry-After": "7"}),
+            httpx2.Response(200, content=b"{}"),
+        ]
+    )
+
+    async with make_client(source) as client:
+        response = await client.get(URL)
+
+    assert response.status == 200
+    assert len(source.requests) == 2
+
+
+@pytest.mark.anyio
 @pytest.mark.parametrize(
     "transport_error", [httpx2.ConnectError("refused"), httpx2.ReadTimeout("too slow")]
 )
