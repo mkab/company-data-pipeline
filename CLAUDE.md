@@ -81,7 +81,7 @@ pytest. Test data comes from factories (factory_boy), in a `factories.py` next t
 
 Tests never call a real external source: they run against recorded or mocked responses.
 
-dbt models are tested by dbt, never by pytest: `make seed-test && make dbt ARGS="build --target test"`. A model's logic is covered by dbt unit tests (mocked raw rows, `_<source>__unit_tests.yml` next to the models), and its keys by data tests over the seeded fixtures. pytest empties raw at the start of a session, so `make tests` clears what `seed-test` loaded.
+dbt models are tested by dbt, never by pytest: `make seed-test && make dbt ARGS="build --target test"`. A model's logic is covered by dbt unit tests (mocked raw rows, `_<source>__unit_tests.yml` next to the models), and its keys by data tests over the seeded fixtures. pytest empties raw at the start of a session, so `make tests` clears what `seed-test` loaded: run `make seed-test` again before the next dbt test build.
 
 **A rule is tested at the deepest module that owns it.** An HTTP test covers only what the route adds: the response shape, auth, status codes and the wiring to that module, not every case of the rule behind it.
 
