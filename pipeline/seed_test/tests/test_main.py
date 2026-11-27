@@ -4,7 +4,6 @@ import sqlalchemy as sa
 from pipeline.database import session_scope
 from pipeline.raw.enums import EdgarDataset
 from pipeline.raw.models import EdgarFetch
-from pipeline.seed_test import __main__ as seed_cli
 from pipeline.seed_test.__main__ import main, seed
 
 
@@ -41,13 +40,14 @@ async def test_the_seed_records_the_committed_fixtures_of_every_edge_case() -> N
 
 
 def test_the_cli_runs_the_seed(monkeypatch: pytest.MonkeyPatch) -> None:
-    seed_runs: list[None] = []
+    seed_ran = False
 
     async def record_the_seed_run() -> None:
-        seed_runs.append(None)
+        nonlocal seed_ran
+        seed_ran = True
 
-    monkeypatch.setattr(seed_cli, "seed", record_the_seed_run)
+    monkeypatch.setattr("pipeline.seed_test.__main__.seed", record_the_seed_run)
 
     main()
 
-    assert seed_runs == [None]
+    assert seed_ran

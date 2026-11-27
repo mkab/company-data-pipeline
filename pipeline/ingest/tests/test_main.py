@@ -3,7 +3,6 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from pipeline.ingest import __main__ as ingest_cli
 from pipeline.ingest.__main__ import ingest, main
 from pipeline.sources.edgar.client import submissions_url
 
@@ -13,9 +12,11 @@ if TYPE_CHECKING:
     from pipeline.sources.edgar.client import EdgarClient
 
 
-async def ingest_that_succeeds(edgar: EdgarClient, tracked_companies: list[TrackedCompany]) -> int:
-    """Stand in for `ingest`, with its signature, as a run that recorded every fetch."""
-    return 0
+async def ingest_with_a_failed_fetch(
+    edgar: EdgarClient, tracked_companies: list[TrackedCompany]
+) -> int:
+    """Stand in for `ingest`, with its signature, as a run with a failed fetch."""
+    return 1
 
 
 @pytest.mark.anyio
@@ -63,6 +64,6 @@ def test_the_cli_exits_with_the_status_of_the_ingest_run(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setenv("EDGAR_USER_AGENT", "Jane Doe jane@example.com")
-    monkeypatch.setattr(ingest_cli, "ingest", ingest_that_succeeds)
+    monkeypatch.setattr("pipeline.ingest.__main__.ingest", ingest_with_a_failed_fetch)
 
-    assert main() == 0
+    assert main() == 1
