@@ -1,0 +1,59 @@
+# The fetches `make seed-test` records in the test database's raw tables,
+# for `make dbt ARGS="build --target test"` to build on.
+# Each `file` is a real EDGAR body (fetched 2026-11-27), trimmed to a few entries,
+# under this directory.
+#
+# They cover the edge cases listed in `config/tracked_companies.toml`.
+# Apple (320193) is only in the tickers file, as a company that is not tracked
+
+[[fetches]]
+dataset = "company_tickers"
+file = "company_tickers_exchange.json"
+
+# Novo Nordisk: a foreign private issuer, filing 20-F with `ifrs-full` facts
+
+[[fetches]]
+dataset = "submissions"
+cik = 353278
+file = "submissions/CIK0000353278.json"
+
+[[fetches]]
+dataset = "company_facts"
+cik = 353278
+file = "companyfacts/CIK0000353278.json"
+
+# JPMorgan Chase: several tickers (its preferred shares)
+
+[[fetches]]
+dataset = "submissions"
+cik = 19617
+file = "submissions/CIK0000019617.json"
+
+[[fetches]]
+dataset = "company_facts"
+cik = 19617
+file = "companyfacts/CIK0000019617.json"
+
+# Berkshire Hathaway: share classes (BRK-A and BRK-B)
+
+[[fetches]]
+dataset = "submissions"
+cik = 1067983
+file = "submissions/CIK0001067983.json"
+
+[[fetches]]
+dataset = "company_facts"
+cik = 1067983
+file = "companyfacts/CIK0001067983.json"
+
+# Generation Essentials Group: no company facts, so EDGAR answers 404 and no body is kept
+
+[[fetches]]
+dataset = "submissions"
+cik = 2053456
+file = "submissions/CIK0002053456.json"
+
+[[fetches]]
+dataset = "company_facts"
+cik = 2053456
+http_status = 404

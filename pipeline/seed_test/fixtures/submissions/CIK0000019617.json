@@ -1,0 +1,184 @@
+{
+  "cik": "0000019617",
+  "ein": "132624428",
+  "lei": null,
+  "sic": "6021",
+  "name": "JPMORGAN CHASE & CO",
+  "flags": "",
+  "phone": "2122706000",
+  "filings": {
+    "files": [
+      {
+        "name": "CIK0000019617-submissions-001.json",
+        "filingTo": "2025-11-24",
+        "filingFrom": "2025-10-30",
+        "filingCount": 2108
+      }
+    ],
+    "recent": {
+      "act": [
+        "33",
+        "33",
+        "33",
+        "34"
+      ],
+      "form": [
+        "424B2",
+        "424B2",
+        "424B2",
+        "10-K"
+      ],
+      "size": [
+        597676,
+        2528523,
+        298031,
+        64896112
+      ],
+      "items": [
+        "",
+        "",
+        "",
+        ""
+      ],
+      "isXBRL": [
+        0,
+        0,
+        1,
+        1
+      ],
+      "core_type": [
+        "424B2",
+        "424B2",
+        "424B2",
+        "XBRL"
+      ],
+      "fileNumber": [
+        "333-293684",
+        "333-293684",
+        "333-293684",
+        "001-05805"
+      ],
+      "filingDate": [
+        "2026-11-25",
+        "2026-11-25",
+        "2026-11-25",
+        "2026-02-13"
+      ],
+      "filmNumber": [
+        "261602205",
+        "261601995",
+        "261601958",
+        "26633173"
+      ],
+      "reportDate": [
+        "",
+        "",
+        "",
+        "2025-12-31"
+      ],
+      "isInlineXBRL": [
+        0,
+        0,
+        1,
+        1
+      ],
+      "isXBRLNumeric": [
+        0,
+        0,
+        0,
+        null
+      ],
+      "accessionNumber": [
+        "0001918704-26-037074",
+        "0001213900-26-124232",
+        "0001213900-26-124231",
+        "0001628280-26-008131"
+      ],
+      "primaryDocument": [
+        "form424b2.htm",
+        "ea0313590-01_424b2.htm",
+        "ea0313640-01_424b2.htm",
+        "jpm-20251231.htm"
+      ],
+      "acceptanceDateTime": [
+        "2026-11-25T22:29:18.000Z",
+        "2026-11-25T22:11:11.000Z",
+        "2026-11-25T22:07:22.000Z",
+        "2026-02-13T21:20:00.000Z"
+      ],
+      "primaryDocDescription": [
+        "PRELIMINARY PRICING SUPPLEMENT",
+        "PRELIMINARY PRICING SUPPLEMENT",
+        "PRICING SUPPLEMENT",
+        "10-K"
+      ]
+    }
+  },
+  "tickers": [
+    "JPM",
+    "JPM-PC",
+    "AMJB",
+    "JPM-PD",
+    "JPM-PJ",
+    "JPM-PK",
+    "JPM-PL",
+    "JPM-PM",
+    "VYLD"
+  ],
+  "website": "",
+  "category": "Large accelerated filer",
+  "ownerOrg": "02 Finance",
+  "addresses": {
+    "mailing": {
+      "city": "NEW YORK",
+      "country": null,
+      "street1": "270 PARK AVENUE",
+      "street2": null,
+      "zipCode": "10017",
+      "countryCode": null,
+      "stateOrCountry": "NY",
+      "isForeignLocation": 0,
+      "foreignStateTerritory": null,
+      "stateOrCountryDescription": "NY"
+    },
+    "business": {
+      "city": "NEW YORK",
+      "country": null,
+      "street1": "270 PARK AVENUE",
+      "street2": null,
+      "zipCode": "10017",
+      "countryCode": null,
+      "stateOrCountry": "NY",
+      "isForeignLocation": null,
+      "foreignStateTerritory": null,
+      "stateOrCountryDescription": "NY"
+    }
+  },
+  "exchanges": [
+    "NYSE",
+    "NYSE",
+    "NYSE",
+    "NYSE",
+    "NYSE",
+    "NYSE",
+    "NYSE",
+    "NYSE",
+    "NYSE"
+  ],
+  "entityType": "operating",
+  "description": "",
+  "formerNames": [
+    {
+      "to": "2026-11-25T05:00:00.000Z",
+      "from": "2009-02-02T05:00:00.000Z",
+      "name": "JPMORGAN CHASE & CO"
+    }
+  ],
+  "fiscalYearEnd": "1231",
+  "sicDescription": "National Commercial Banks",
+  "investorWebsite": "",
+  "stateOfIncorporation": "DE",
+  "stateOfIncorporationDescription": "DE",
+  "insiderTransactionForOwnerExists": 1,
+  "insiderTransactionForIssuerExists": 1
+}

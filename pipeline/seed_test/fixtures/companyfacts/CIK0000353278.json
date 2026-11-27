@@ -1,0 +1,155 @@
+{
+  "cik": 353278,
+  "facts": {
+    "dei": {
+      "EntityNumberOfEmployees": {
+        "label": "Entity Number of Employees",
+        "units": {
+          "employee": [
+            {
+              "fp": "FY",
+              "fy": 2018,
+              "end": "2016-12-31",
+              "val": 42446,
+              "accn": "0001628280-19-000870",
+              "form": "6-K",
+              "filed": "2019-02-04",
+              "frame": "CY2016Q4I"
+            },
+            {
+              "fp": "FY",
+              "fy": 2018,
+              "end": "2017-12-31",
+              "val": 42682,
+              "accn": "0001628280-19-000870",
+              "form": "6-K",
+              "filed": "2019-02-04"
+            },
+            {
+              "fp": "FY",
+              "fy": 2019,
+              "end": "2017-12-31",
+              "val": 42682,
+              "accn": "0001628280-20-001017",
+              "form": "6-K",
+              "filed": "2020-02-05",
+              "frame": "CY2017Q4I"
+            },
+            {
+              "fp": "FY",
+              "fy": 2018,
+              "end": "2018-12-31",
+              "val": 43202,
+              "accn": "0001628280-19-000870",
+              "form": "6-K",
+              "filed": "2019-02-04"
+            }
+          ]
+        },
+        "description": "Number of persons employed by the Entity"
+      }
+    },
+    "invest": {
+      "DerivativeNotionalAmount": {
+        "label": "Derivative, Notional Amount",
+        "units": {
+          "DKK": [
+            {
+              "fp": "FY",
+              "fy": 2017,
+              "end": "2016-12-31",
+              "val": 60467000000,
+              "accn": "0001628280-18-001261",
+              "form": "6-K",
+              "filed": "2018-02-08",
+              "frame": "CY2016Q4I"
+            },
+            {
+              "fp": "FY",
+              "fy": 2018,
+              "end": "2017-12-31",
+              "val": 57538000000,
+              "accn": "0001628280-19-000870",
+              "form": "6-K",
+              "filed": "2019-02-04",
+              "frame": "CY2017Q4I"
+            },
+            {
+              "fp": "FY",
+              "fy": 2017,
+              "end": "2017-12-31",
+              "val": 57538000000,
+              "accn": "0001628280-18-001261",
+              "form": "6-K",
+              "filed": "2018-02-08"
+            },
+            {
+              "fp": "FY",
+              "fy": 2018,
+              "end": "2018-12-31",
+              "val": 49826000000,
+              "accn": "0001628280-19-000870",
+              "form": "6-K",
+              "filed": "2019-02-04",
+              "frame": "CY2018Q4I"
+            }
+          ]
+        },
+        "description": "Aggregate notional amount specified by the derivative(s). Expressed as an absolute value."
+      }
+    },
+    "ifrs-full": {
+      "Revenue": {
+        "label": null,
+        "units": {
+          "DKK": [
+            {
+              "fp": "FY",
+              "fy": 2017,
+              "end": "2015-12-31",
+              "val": 107927000000,
+              "accn": "0001628280-18-001261",
+              "form": "6-K",
+              "filed": "2018-02-08",
+              "frame": "CY2015",
+              "start": "2015-01-01"
+            },
+            {
+              "fp": "FY",
+              "fy": 2017,
+              "end": "2016-12-31",
+              "val": 111780000000,
+              "accn": "0001628280-18-001261",
+              "form": "6-K",
+              "filed": "2018-02-08",
+              "start": "2016-01-01"
+            },
+            {
+              "fp": "FY",
+              "fy": 2018,
+              "end": "2016-12-31",
+              "val": 111780000000,
+              "accn": "0001628280-19-000870",
+              "form": "6-K",
+              "filed": "2019-02-04",
+              "frame": "CY2016",
+              "start": "2016-01-01"
+            },
+            {
+              "fp": "FY",
+              "fy": 2017,
+              "end": "2017-12-31",
+              "val": 111696000000,
+              "accn": "0001628280-18-001261",
+              "form": "6-K",
+              "filed": "2018-02-08",
+              "start": "2017-01-01"
+            }
+          ]
+        },
+        "description": null
+      }
+    }
+  },
+  "entityName": "NOVO NORDISK A/S"
+}

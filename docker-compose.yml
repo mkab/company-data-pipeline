@@ -46,6 +46,23 @@ services:
       db:
         condition: service_healthy
 
+  # One-off (`make seed-test`): fills the test database's raw for `make dbt ARGS="build --target test"`.
+  # It migrates as the owner, then writes as the ingest role, as the ingest run does
+  seed-test:
+    profiles: [seed-test]
+    build:
+      context: .
+      target: app
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+psycopg://ingest:${INGEST_DB_PASSWORD}@db:5432/pipeline_test
+      MIGRATIONS_DATABASE_URL: postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/pipeline_test
+    volumes:
+      - .:/app
+    depends_on:
+      db:
+        condition: service_healthy
+
   # One-off (`docker compose run --rm dbt`): the profile keeps `up` from starting it
   dbt:
     profiles: [dbt]

@@ -21,6 +21,8 @@ help:
 	@echo "                 	(the downgrade empties the development database)"
 	@echo "  ingest         	fetch the tickers file and every tracked company's datasets from SEC EDGAR into raw"
 	@echo "                 	(EDGAR_USER_AGENT is required in .env)"
+	@echo "  seed-test      	migrate the test database and load the committed EDGAR fixtures into its raw tables"
+	@echo "                 	(\`make tests\` empties them again)"
 	@echo "  dbt            	run dbt in its container (ARGS=<dbt command and options>, build by default)"
 	@echo "                 	(ARGS=\"build --target test\" builds against the test database, after seed-test)"
 	@echo "  pipeline       	ingest, then dbt build"
@@ -94,6 +96,12 @@ migrations-check:
 ingest:
 	@# The `ingest` service connects as the ingest role, the one that may write raw
 	docker compose run --rm ingest python -m pipeline.ingest
+
+.PHONY: seed-test
+seed-test:
+	@# The `seed-test` service points both URLs at pipeline_test.
+	@# raw is append-only, so a second seed adds fetches of the same payloads and staging reads the same rows
+	docker compose run --rm seed-test sh -c "alembic upgrade head && python -m pipeline.seed_test"
 
 .PHONY: dbt
 dbt:

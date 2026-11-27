@@ -1,0 +1,158 @@
+{
+  "cik": 1067983,
+  "facts": {
+    "dei": {
+      "EntityCommonStockSharesOutstanding": {
+        "label": "Entity Common Stock, Shares Outstanding",
+        "units": {
+          "shares": [
+            {
+              "fp": "Q3",
+              "fy": 2009,
+              "end": "2009-10-29",
+              "val": 1056884,
+              "accn": "0001157523-09-007839",
+              "form": "10-Q",
+              "filed": "2009-11-06",
+              "frame": "CY2009Q3I"
+            },
+            {
+              "fp": "FY",
+              "fy": 2009,
+              "end": "2010-02-18",
+              "val": 1103764,
+              "accn": "0001193125-10-043450",
+              "form": "10-K",
+              "filed": "2010-03-01"
+            },
+            {
+              "fp": "Q1",
+              "fy": 2010,
+              "end": "2010-04-30",
+              "val": 0,
+              "accn": "0001157523-10-002982",
+              "form": "10-Q",
+              "filed": "2010-05-07",
+              "frame": "CY2010Q1I"
+            },
+            {
+              "fp": "Q2",
+              "fy": 2010,
+              "end": "2010-07-30",
+              "val": 976414,
+              "accn": "0001157523-10-004882",
+              "form": "10-Q",
+              "filed": "2010-08-06",
+              "frame": "CY2010Q2I"
+            }
+          ]
+        },
+        "description": "Indicate number of shares or other units outstanding of each of registrant's classes of capital or common stock or other ownership interests, if and as stated on cover of related periodic report. Where multiple classes or units exist define each class/interest by adding class of stock items such as Common Class A [Member], Common Class B [Member] or Partnership Interest [Member] onto the Instrument [Domain] of the Entity Listings, Instrument."
+      }
+    },
+    "ffd": {
+      "NetFeeAmt": {
+        "label": "",
+        "units": {
+          "USD": [
+            {
+              "fp": null,
+              "fy": null,
+              "end": "2026-04-13",
+              "val": 235206.48,
+              "accn": "0001193125-26-154274",
+              "form": "424B5",
+              "filed": "2026-04-14",
+              "frame": "CY2026Q1I"
+            },
+            {
+              "fp": null,
+              "fy": null,
+              "end": "2026-11-16",
+              "val": 100072.28,
+              "accn": "0001193125-26-465047",
+              "form": "424B5",
+              "filed": "2026-11-17",
+              "frame": "CY2026Q4I"
+            }
+          ]
+        },
+        "description": ""
+      }
+    },
+    "rxp": {
+      "Fees": {
+        "label": "",
+        "units": {
+          "USD": [
+            {
+              "fp": null,
+              "fy": null,
+              "end": "2025-12-31",
+              "val": 1330707,
+              "accn": "0001193125-26-402798",
+              "form": "2.01 SD",
+              "filed": "2026-09-25",
+              "frame": "CY2025",
+              "start": "2025-01-01"
+            }
+          ]
+        },
+        "description": ""
+      }
+    },
+    "us-gaap": {
+      "Revenues": {
+        "label": "Revenues",
+        "units": {
+          "USD": [
+            {
+              "fp": "FY",
+              "fy": 2009,
+              "end": "2007-12-31",
+              "val": 118245000000,
+              "accn": "0001193125-10-043450",
+              "form": "10-K",
+              "filed": "2010-03-01",
+              "frame": "CY2007",
+              "start": "2007-01-01"
+            },
+            {
+              "fp": "Q3",
+              "fy": 2009,
+              "end": "2008-09-30",
+              "val": 83194000000,
+              "accn": "0001157523-09-007839",
+              "form": "10-Q",
+              "filed": "2009-11-06",
+              "start": "2008-01-01"
+            },
+            {
+              "fp": "Q3",
+              "fy": 2009,
+              "end": "2008-09-30",
+              "val": 27926000000,
+              "accn": "0001157523-09-007839",
+              "form": "10-Q",
+              "filed": "2009-11-06",
+              "frame": "CY2008Q3",
+              "start": "2008-07-01"
+            },
+            {
+              "fp": "FY",
+              "fy": 2009,
+              "end": "2008-12-31",
+              "val": 107786000000,
+              "accn": "0001193125-10-043450",
+              "form": "10-K",
+              "filed": "2010-03-01",
+              "start": "2008-01-01"
+            }
+          ]
+        },
+        "description": "Amount of revenue recognized from goods sold, services rendered, insurance premiums, or other activities that constitute an earning process. Includes, but is not limited to, investment and interest income before deduction of interest expense when recognized as a component of revenue, and sales and trading gain (loss)."
+      }
+    }
+  },
+  "entityName": "BERKSHIRE HATHAWAY INC"
+}
