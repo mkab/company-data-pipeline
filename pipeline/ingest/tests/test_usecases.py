@@ -5,7 +5,7 @@ import pytest
 import sqlalchemy as sa
 
 from pipeline.database import session_scope
-from pipeline.ingest.usecases import FailedFetch, run_ingest
+from pipeline.ingest.usecases import FetchTarget, run_ingest
 from pipeline.raw.enums import EdgarDataset
 from pipeline.raw.models import EdgarFetch, EdgarPayload
 from pipeline.sources.edgar.client import TICKERS_URL, submissions_url
@@ -90,7 +90,7 @@ async def test_a_failed_fetch_is_reported(
     async with edgar:
         failed_fetches = await run_ingest(edgar, tracked_companies)
 
-    assert failed_fetches == [FailedFetch(dataset=EdgarDataset.SUBMISSIONS, cik=320193)]
+    assert failed_fetches == [FetchTarget(dataset=EdgarDataset.SUBMISSIONS, cik=320193)]
 
 
 @pytest.mark.parametrize(("status", "body"), FAILING_RESPONSES)
@@ -122,7 +122,7 @@ async def test_a_failed_tickers_file_does_not_stop_the_companies(
     async with edgar:
         failed_fetches = await run_ingest(edgar, tracked_companies)
 
-    assert failed_fetches == [FailedFetch(dataset=EdgarDataset.COMPANY_TICKERS, cik=None)]
+    assert failed_fetches == [FetchTarget(dataset=EdgarDataset.COMPANY_TICKERS, cik=None)]
     assert await count_rows(EdgarFetch) == 4
 
 

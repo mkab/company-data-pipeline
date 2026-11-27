@@ -21,8 +21,8 @@ logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
-class FailedFetch:
-    """A fetch the run could not record.
+class FetchTarget:
+    """Which dataset a fetch is for, and for which company.
 
     `cik` is `None` for the tickers file.
     """
@@ -38,7 +38,7 @@ class FailedFetch:
 
 async def run_ingest(
     edgar: EdgarClient, tracked_companies: list[TrackedCompany]
-) -> list[FailedFetch]:
+) -> list[FetchTarget]:
     """Fetch the tickers file, then every tracked company's submissions and company facts.
 
     Each fetch is recorded in raw in its own transaction.
@@ -49,51 +49,51 @@ async def run_ingest(
     A database error is not a fetch failure:
     it is raised, and stops the run.
     """
-    tickers_failure = await fetch_and_record(
-        edgar.get_tickers, FailedFetch(dataset=EdgarDataset.COMPANY_TICKERS, cik=None)
+    failed_tickers = await fetch_and_record(
+        edgar.get_tickers, FetchTarget(dataset=EdgarDataset.COMPANY_TICKERS, cik=None)
     )
     async with asyncio.TaskGroup() as task_group:
         company_tasks = [
             task_group.create_task(ingest_company(edgar, company.cik))
             for company in tracked_companies
         ]
-    failed_fetches = [] if tickers_failure is None else [tickers_failure]
+    failed_fetches = [] if failed_tickers is None else [failed_tickers]
     for task in company_tasks:
         failed_fetches.extend(task.result())
     return failed_fetches
 
 
-async def ingest_company(edgar: EdgarClient, cik: int) -> list[FailedFetch]:
+async def ingest_company(edgar: EdgarClient, cik: int) -> list[FetchTarget]:
     """Fetch and record one company's datasets, and return the fetches that failed."""
     outcomes = [
         await fetch_and_record(
             lambda: edgar.get_submissions(cik),
-            FailedFetch(dataset=EdgarDataset.SUBMISSIONS, cik=cik),
+            FetchTarget(dataset=EdgarDataset.SUBMISSIONS, cik=cik),
         ),
         await fetch_and_record(
             lambda: edgar.get_company_facts(cik),
-            FailedFetch(dataset=EdgarDataset.COMPANY_FACTS, cik=cik),
+            FetchTarget(dataset=EdgarDataset.COMPANY_FACTS, cik=cik),
         ),
     ]
     return [outcome for outcome in outcomes if outcome is not None]
 
 
 async def fetch_and_record(
-    fetch: Callable[[], Awaitable[FetchedResponse]], failure: FailedFetch
-) -> FailedFetch | None:
+    fetch: Callable[[], Awaitable[FetchedResponse]], target: FetchTarget
+) -> FetchTarget | None:
     """Record the response `fetch` returns.
 
-    Return `failure` when there is no response to record, and `None` otherwise.
+    Return `target` when there is no response to record, and `None` otherwise.
     """
     try:
         response = await fetch()
     except (SourceRefusedError, SourceUnavailableError, UnexpectedPayloadError) as error:
-        logger.error("Could not fetch %s: %s", failure.describe(), error)
-        return failure
+        logger.error("Could not fetch %s: %s", target.describe(), error)
+        return target
     if response.status == HTTPStatus.NOT_FOUND:
-        logger.info("CIK %s has no %s", failure.cik, failure.dataset)
+        logger.info("CIK %s has no %s", target.cik, target.dataset)
     async with session_scope() as session:
         await EdgarFetchService.from_session(session).record_fetch(
-            response, dataset=failure.dataset, cik=failure.cik
+            response, dataset=target.dataset, cik=target.cik
         )
     return None
