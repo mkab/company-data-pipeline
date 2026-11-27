@@ -19,7 +19,8 @@ help:
 	@echo "  migration      	autogenerate a migration file (MSG=<message> is required)"
 	@echo "  migrations-check	run the migrations up, check none is missing, then down to base and up again"
 	@echo "                 	(the downgrade empties the development database)"
-	@echo "  lint           	run the code linters, without fixing anything"
+	@echo "  lint           	run the code linters, without fixing anything (lint-migrations included)"
+	@echo "  lint-migrations	lint the SQL of every migration revision with Squawk"
 	@echo "  format         	reformat code and apply the safe lint fixes"
 	@echo "  tests          	run all the tests (ARGS=<pytest options> are passed on)"
 	@echo "  covtest        	run all the tests with coverage in HTML mode. The coverage can be viewed in the file htmlcov/index.html"
@@ -88,6 +89,12 @@ lint:
 	uv run ruff format --check --diff .
 	uv run ruff check .
 	uv run mypy .
+	$(MAKE) lint-migrations
+
+.PHONY: lint-migrations
+lint-migrations:
+	@# Offline (`alembic upgrade --sql`), so no database is needed: the URL only picks the dialect
+	MIGRATIONS_DATABASE_URL=postgresql+psycopg://offline@localhost/offline uv run python bin/lint_migrations.py
 
 .PHONY: format
 format:

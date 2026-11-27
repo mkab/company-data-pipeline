@@ -6,6 +6,8 @@ from alembic import context
 from sqlalchemy import pool
 from sqlalchemy.ext.asyncio import create_async_engine
 
+# Imported for its side effect: declaring the models registers their tables on `alembic_metadata`
+import pipeline.raw.models  # noqa: F401
 from pipeline.database import alembic_metadata, include_managed_schemas
 from pipeline.settings import get_migration_settings
 
@@ -26,6 +28,19 @@ CONFIGURE_OPTIONS: dict[str, Any] = {
     "include_name": include_managed_schemas,
 }
 
+# Set once per run, before the first migration, and kept by the session across autocommit blocks.
+# A migration waiting on a busy table gives up instead of queueing every query behind it.
+# A long build (see "A big index" in docs/migrations.md) lifts the statement timeout, then sets it back
+SESSION_TIMEOUTS = (
+    "SET lock_timeout = '5s'",
+    "SET statement_timeout = '60s'",
+)
+
+
+def set_session_timeouts() -> None:
+    for statement in SESSION_TIMEOUTS:
+        context.execute(statement)
+
 
 def run_migrations_offline() -> None:
     """Emit the migrations as SQL, without a database connection."""
@@ -36,6 +51,7 @@ def run_migrations_offline() -> None:
         dialect_opts={"paramstyle": "named"},
     )
     with context.begin_transaction():
+        set_session_timeouts()
         context.run_migrations()
 
 
@@ -45,6 +61,7 @@ def do_run_migrations(connection: Connection) -> None:
         **CONFIGURE_OPTIONS,
     )
     with context.begin_transaction():
+        set_session_timeouts()
         context.run_migrations()
 
 

@@ -21,7 +21,8 @@ make upgrade [PACKAGE=]  # upgrade the lock (one package or all), sync, rebuild
 make migrate             # alembic upgrade head, in the app container
 make migration MSG=      # autogenerate a migration, in the app container
 make migrations-check    # upgrade head, alembic check, downgrade base, upgrade head (empties the dev database)
-make lint                # ruff format --check, ruff check, mypy (no fixes), on the host
+make lint                # ruff format --check, ruff check, mypy (no fixes), lint-migrations, on the host
+make lint-migrations     # Squawk over each revision's offline SQL (`.squawk.toml`), on the host
 make format              # ruff format, ruff check --fix, on the host
 make tests [ARGS=]       # pytest -v, in the app container, against pipeline_test
 make covtest [ARGS=]     # coverage HTML report -> htmlcov/index.html (fail_under = 96), in the app container
@@ -32,17 +33,19 @@ Each service connects with its own role (`ingest`, `dbt`, `api`, created by `doc
 
 CI (`.github/workflows/ci.yml`) runs the jobs `lint`, `tests` and `pr-title` on every PR, and `tests` again on the merge to `main`; the ruleset on `main` requires all three. A job renamed in the workflow is renamed in the ruleset too.
 
-The pre-commit hook runs `make format` and mypy on any commit touching Python, and the commit-msg hook (`bin/check-commit-msg.sh`) refuses a message without an allowed prefix. Never bypass them with `--no-verify`.
+The pre-commit hook runs `make format` and mypy on any commit touching Python, `make lint-migrations` on any commit touching `migrations/`, and the commit-msg hook (`bin/check-commit-msg.sh`) refuses a message without an allowed prefix. Never bypass them with `--no-verify`.
 
 ## Code conventions
 
 Ruff (`pyproject.toml`) enforces most of these, plus no naive datetimes (`DTZ`), no blind `except Exception` (`BLE`) and no commented-out code (`ERA`).
 
+- **Layers: router, usecase, service, repository** (`docs/adr/0001-routers-usecases-services-repositories.md`). Business rules live in usecases and services; repositories only query.
+- **Tables are declarative models** inheriting from `pipeline.database.ModelBase`, never Core `sa.Table`s. `ModelBase` and `DeclarativeBase` are in ruff's `runtime-evaluated-base-classes`, since SQLAlchemy reads `Mapped[...]` at runtime.
 - **Never build SQL from strings.** Every value reaches the database as a bound parameter, never by f-string, `%` or `.format()` into the statement (ruff `S608`). This covers the Python code; dbt models are SQL by design and take values through `ref`, `source` and `var`, not string building.
 - **Types: strict mypy.** Every first-party module is fully annotated, and no module is relaxed by a `[[tool.mypy.overrides]]` entry. Overrides are only for third-party packages that ship no types. A `# type: ignore` names its error code and a comment says why.
 - **Names used only in type hints are imported under `if TYPE_CHECKING:`**, and the annotation stays unquoted (ruff strict `TC001`-`TC004`, `UP037`). Exception: FastAPI and pydantic read annotations at runtime, so a name in a route or dependency signature, or in a pydantic model, must be a real import. `pydantic.BaseModel` is listed in ruff's `runtime-evaluated-base-classes`; a new runtime reader is added there.
 - **Imports go at the top of the module**, absolute only (no relative imports). Keep a function-level import only when a real cycle forces it, with a comment naming it. Import a name from the module that defines it, never from one that merely imports it.
-- **Enums and the constants derived from them go at the top of their module, directly under the imports, or in the package's `constants.py`.** Never partway down a file between classes.
+- **Enums go in their package's `enums.py`, and constants in its `constants.py`** (a constant used by one module only may sit at the top of it, directly under the imports). Never partway down a file between classes.
 - **No `print`** in application code (ruff `T20`): use the logger.
 - **User-facing copy is sentence case**: every error message and response text. Proper nouns and acronyms keep their case.
 
@@ -56,7 +59,7 @@ The judgement rules (backward compatibility, drops over several releases, a roll
 - **An enum value is added with `ALTER TYPE ... ADD VALUE IF NOT EXISTS`** (`op.execute`), never by letting Alembic recreate the enum. An unused value stays deprecated rather than dropped; the rare real drop follows the new-column recipe in the doc.
 - **A column is made not null in two migrations**: `ADD CONSTRAINT <name> NOT NULL <column> NOT VALID`, then `VALIDATE CONSTRAINT`. Never `SET NOT NULL` on an existing table.
 - **Every migration has a `downgrade()` that runs**: `make migrations-check` (in CI) round-trips them. A downgrade never raises: an irreversible one restores the structure (or is a commented no-op with an idempotent upgrade) and its docstring says how the data is recovered.
-- **Lint every migration with Squawk.**
+- **Lint every migration with Squawk**: `make lint-migrations`, in `make lint` and the pre-commit hook. A rule turned off in `.squawk.toml` has a comment saying why.
 
 ## Git workflow
 

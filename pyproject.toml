@@ -33,6 +33,7 @@ dev = [
     "pytest-cov>=7.1.0",
     "pytest-recording>=0.15.0",
     "ruff>=0.17.6",
+    "squawk-cli>=2.74.0",
 ]
 
 
@@ -133,7 +134,12 @@ ban-relative-imports = "all"
 [tool.ruff.lint.flake8-type-checking]
 strict = true
 # These read their annotations at runtime, so the names in them must be importable
-runtime-evaluated-base-classes = ["pydantic.BaseModel"]
+runtime-evaluated-base-classes = [
+  "pydantic.BaseModel",
+  # SQLAlchemy reads the `Mapped[...]` annotations of every model
+  "sqlalchemy.orm.DeclarativeBase",
+  "pipeline.database.ModelBase",
+]
 
 
 [tool.ruff.lint.per-file-ignores]

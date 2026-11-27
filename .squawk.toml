@@ -1,0 +1,8 @@
+# Read by `make lint-migrations` (bin/lint_migrations.py)
+pg_version = "19.0"
+
+excluded_rules = [
+  # HTTP statuses and other bounded codes fit a smallint for good.
+  # The rule guards ids and counters, which are bigint here anyway
+  "prefer-bigint-over-smallint",
+]
