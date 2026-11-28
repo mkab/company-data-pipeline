@@ -16,7 +16,8 @@ class Company(CuratedModelBase):
 
     cik: Mapped[int] = mapped_column(sa.BigInteger, primary_key=True)
     name: Mapped[str | None] = mapped_column(sa.Text)
-    is_tracked: Mapped[bool | None] = mapped_column(sa.Boolean)
+    # Not null in the dbt contract, so a filter on it matches every company
+    is_tracked: Mapped[bool] = mapped_column(sa.Boolean)
     entity_type: Mapped[str | None] = mapped_column(sa.Text)
     sic: Mapped[str | None] = mapped_column(sa.Text)
     sic_description: Mapped[str | None] = mapped_column(sa.Text)

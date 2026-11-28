@@ -39,7 +39,7 @@ def tickers_subquery() -> sa.ScalarSelect[object]:
     )
 
 
-def company_summary_query() -> sa.Select[int, str | None, bool | None, object]:
+def company_summary_query() -> sa.Select[int, str | None, bool, object]:
     """Return the query of the companies list's columns, which the company details add to."""
     return sa.select(
         Company.cik, Company.name, Company.is_tracked, tickers_subquery().label("tickers")

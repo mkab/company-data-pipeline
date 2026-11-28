@@ -46,7 +46,7 @@ class CompanySummary(BaseModel):
 
     cik: PaddedCik
     name: str | None
-    is_tracked: bool | None
+    is_tracked: bool
     tickers: list[Ticker]
 
     def sort_key(self) -> CompanySortKey:
