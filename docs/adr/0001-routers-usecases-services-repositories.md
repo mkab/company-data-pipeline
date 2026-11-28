@@ -19,6 +19,7 @@ repository  reads and writes the database, nothing else       (no business rules
 ```
 
 - A router calls a usecase, or a service directly when the action needs only one.
+- Health checks are infrastructure, not business: a health route may call `pipeline.database` (such as `ping_database`) with no service between.
 - Business rules live in usecases and services, never in routers or repositories.
 - A service depends on repository `Protocol`s (in the package's `protocols.py`), never on a concrete repository (in its `repositories.py`). The Postgres implementations (`Postgres...Repository`) satisfy them in the application, and in-memory fakes (`Fake...Repository`, in the package's `tests/fakes.py`) in unit tests.
 - Models are declarative: every table is a class inheriting from `pipeline.database.ModelBase` (a `DeclarativeBase`), which carries the standard columns.
