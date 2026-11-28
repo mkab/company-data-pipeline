@@ -103,7 +103,9 @@ async def session_scope() -> AsyncIterator[AsyncSession]:
 
 
 async def ping_database(session: AsyncSession) -> None:
-    """Run `SELECT 1`, which raises `sqlalchemy.exc.DBAPIError` when the database is unreachable."""
+    """Run `SELECT 1`,
+    which raises `sqlalchemy.exc.DBAPIError` when the database is unreachable.
+    """
     await session.execute(sa.select(1))
 
 

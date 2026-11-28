@@ -32,7 +32,9 @@ async def health() -> HealthResponse:
     responses={HTTPStatus.SERVICE_UNAVAILABLE: {"model": ProblemDetail}},
 )
 async def ready(session: Annotated[AsyncSession, Depends(get_session)]) -> HealthResponse:
-    """Report that the API can serve requests: it reaches the database as its own role."""
+    """Report that the API can serve requests:
+    it reaches the database as its own role.
+    """
     try:
         await ping_database(session)
     except DBAPIError as error:

@@ -12,7 +12,8 @@ if TYPE_CHECKING:
 
 pytestmark = pytest.mark.anyio
 
-# Port 1 has no listener, so connecting is refused at once
+# Port 1 has no listener,
+# so connecting is refused at once
 UNREACHABLE_DATABASE_URL = "postgresql+psycopg://api:api@localhost:1/pipeline_test"
 
 

@@ -102,7 +102,7 @@ async def find_curated_drift() -> list[str]:
 
 
 def report_drift(drift: list[str]) -> None:
-    """Log each difference, then exit with status 1 when there is any."""
+    """Return when `drift` is empty, else raise `SystemExit(1)`."""
     for line in drift:
         logger.error(line)
     if drift:

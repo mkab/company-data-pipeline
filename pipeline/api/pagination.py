@@ -2,7 +2,8 @@
 
 A cursor is the last row's sort key, as base64 of its JSON, opaque to the client.
 Each list declares its sort key as a pydantic model,
-and its query fetches `limit + 1` rows after the key, so `build_page` knows whether another page follows.
+and its query fetches `limit + 1` rows after the key,
+so `build_page` knows whether another page follows.
 """
 
 import base64

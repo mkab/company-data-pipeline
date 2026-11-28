@@ -12,7 +12,9 @@ import pipeline.curated.models  # noqa: F401  # registers the curated tables on 
 from pipeline.database import CURATED_SCHEMA, curated_metadata
 from pipeline.tests.roles import connecting_as
 
-# What dbt grants the api role: SELECT on each model (`grants` config) and usage on the schema (on-run-end)
+# What dbt grants the api role:
+# SELECT on each model (`grants` config) and usage on the schema (on-run-end).
+# The schema is written out, since an identifier cannot be a bound parameter
 API_GRANTS = (
     sa.text("GRANT USAGE ON SCHEMA curated TO api"),
     sa.text("GRANT SELECT ON ALL TABLES IN SCHEMA curated TO api"),
