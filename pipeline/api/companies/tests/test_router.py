@@ -3,16 +3,12 @@
 The filters, ordering and paging themselves are tested at the queries (`pipeline/curated/tests`).
 """
 
-from datetime import date
 from typing import TYPE_CHECKING
 
 import pytest
 
-from pipeline.curated.tests.factories import CompanyFactory, CompanyTickerFactory, FilingFactory
-
 if TYPE_CHECKING:
     from httpx2 import AsyncClient
-    from sqlalchemy.ext.asyncio import AsyncSession
 
 pytestmark = [pytest.mark.anyio, pytest.mark.usefixtures("database_url_as_api")]
 
@@ -24,40 +20,10 @@ UNKNOWN_CIK_PROBLEM = {
 }
 
 
-async def add_apple_and_microsoft(dbt_session: AsyncSession) -> None:
-    dbt_session.add_all(
-        [
-            CompanyFactory.build(cik=320193, name="Apple Inc.", is_tracked=True),
-            CompanyFactory.build(cik=789019, name="Microsoft Corp", is_tracked=False),
-            CompanyTickerFactory.build(cik=320193, ticker="AAPL", exchange="Nasdaq"),
-            CompanyTickerFactory.build(cik=789019, ticker="MSFT", exchange="Nasdaq"),
-        ]
-    )
-    await dbt_session.commit()
-
-
-async def add_apple_filings(dbt_session: AsyncSession) -> None:
-    dbt_session.add_all(
-        [
-            CompanyFactory.build(cik=320193),
-            FilingFactory.build(
-                accession_number="0000320193-25-000079",
-                form="10-K",
-                filing_date=date(2025, 10, 31),
-            ),
-            FilingFactory.build(
-                accession_number="0000320193-25-000073", form="10-Q", filing_date=date(2025, 8, 1)
-            ),
-        ]
-    )
-    await dbt_session.commit()
-
-
+@pytest.mark.usefixtures("apple_and_microsoft")
 async def test_list_companies_returns_a_page_of_companies_with_their_tickers(
-    client: AsyncClient, dbt_session: AsyncSession
+    client: AsyncClient,
 ) -> None:
-    await add_apple_and_microsoft(dbt_session)
-
     response = await client.get("/v1/companies")
 
     assert response.status_code == 200
@@ -80,11 +46,8 @@ async def test_list_companies_returns_a_page_of_companies_with_their_tickers(
     }
 
 
-async def test_list_companies_resumes_from_the_next_cursor(
-    client: AsyncClient, dbt_session: AsyncSession
-) -> None:
-    await add_apple_and_microsoft(dbt_session)
-
+@pytest.mark.usefixtures("apple_and_microsoft")
+async def test_list_companies_resumes_from_the_next_cursor(client: AsyncClient) -> None:
     first_page = (await client.get("/v1/companies", params={"limit": "1"})).json()
     second_page = (
         await client.get(
@@ -101,11 +64,10 @@ async def test_list_companies_resumes_from_the_next_cursor(
     "params",
     [{"ticker": "MSFT"}, {"is_tracked": "false"}, {"name": "micro"}],
 )
+@pytest.mark.usefixtures("apple_and_microsoft")
 async def test_list_companies_passes_each_filter_on(
-    client: AsyncClient, dbt_session: AsyncSession, params: dict[str, str]
+    client: AsyncClient, params: dict[str, str]
 ) -> None:
-    await add_apple_and_microsoft(dbt_session)
-
     response = await client.get("/v1/companies", params=params)
 
     assert response.status_code == 200
@@ -120,11 +82,8 @@ async def test_list_companies_rejects_a_bad_filter_with_a_422(client: AsyncClien
     assert response.json()["errors"][0]["location"] == ["query", "is_tracked"]
 
 
-async def test_get_company_returns_its_details(
-    client: AsyncClient, dbt_session: AsyncSession
-) -> None:
-    await add_apple_and_microsoft(dbt_session)
-
+@pytest.mark.usefixtures("apple_and_microsoft")
+async def test_get_company_returns_its_details(client: AsyncClient) -> None:
     response = await client.get("/v1/companies/320193")
 
     assert response.status_code == 200
@@ -158,11 +117,8 @@ async def test_a_cik_that_is_not_digits_is_a_422(client: AsyncClient, path: str)
     assert response.json()["errors"][0]["location"] == ["path", "cik"]
 
 
-async def test_list_filings_returns_a_page_of_the_company_s_filings(
-    client: AsyncClient, dbt_session: AsyncSession
-) -> None:
-    await add_apple_filings(dbt_session)
-
+@pytest.mark.usefixtures("apple_10k_and_10q")
+async def test_list_filings_returns_a_page_of_the_company_s_filings(client: AsyncClient) -> None:
     response = await client.get("/v1/companies/0000320193/filings", params={"form": "10-K"})
 
     assert response.status_code == 200
@@ -188,11 +144,8 @@ async def test_list_filings_returns_a_page_of_the_company_s_filings(
     }
 
 
-async def test_list_filings_resumes_from_the_next_cursor(
-    client: AsyncClient, dbt_session: AsyncSession
-) -> None:
-    await add_apple_filings(dbt_session)
-
+@pytest.mark.usefixtures("apple_10k_and_10q")
+async def test_list_filings_resumes_from_the_next_cursor(client: AsyncClient) -> None:
     first_page = (await client.get("/v1/companies/320193/filings", params={"limit": "1"})).json()
     second_page = (
         await client.get(
@@ -214,11 +167,10 @@ async def test_list_filings_resumes_from_the_next_cursor(
         {"filed_from": "2025-08-01", "filed_to": "2025-08-01"},
     ],
 )
+@pytest.mark.usefixtures("apple_10k_and_10q")
 async def test_list_filings_passes_each_filter_on(
-    client: AsyncClient, dbt_session: AsyncSession, params: dict[str, str]
+    client: AsyncClient, params: dict[str, str]
 ) -> None:
-    await add_apple_filings(dbt_session)
-
     response = await client.get("/v1/companies/320193/filings", params=params)
 
     assert response.status_code == 200

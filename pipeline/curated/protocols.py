@@ -26,7 +26,9 @@ class CompanyRepository(Protocol):
         """Return the company with this CIK, or `None` when there is none."""
         ...
 
-    async def company_exists(self, cik: int) -> bool: ...
+    async def company_exists(self, cik: int) -> bool:
+        """Return whether a company has this CIK."""
+        ...
 
 
 class FilingRepository(Protocol):

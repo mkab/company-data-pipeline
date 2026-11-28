@@ -24,11 +24,11 @@ from pipeline.curated.types import (
     FilingSortKey,
 )
 
-router = APIRouter(prefix="/companies", tags=["companies"])
-
 UNKNOWN_CIK_RESPONSES: dict[int | str, dict[str, Any]] = {
     HTTPStatus.NOT_FOUND: {"model": ProblemDetail}
 }
+
+router = APIRouter(prefix="/companies", tags=["companies"])
 
 
 def company_not_found(error: CompanyNotFoundError) -> HTTPException:

@@ -37,21 +37,6 @@ async def add_rows(dbt_session: AsyncSession, rows: list[CuratedModelBase]) -> N
     await dbt_session.commit()
 
 
-async def add_three_companies(dbt_session: AsyncSession) -> None:
-    await add_rows(
-        dbt_session,
-        [
-            CompanyFactory.build(cik=789019, name="Microsoft Corp", is_tracked=True),
-            CompanyFactory.build(cik=320193, name="Apple Inc.", is_tracked=True),
-            CompanyFactory.build(cik=1652044, name="Alphabet Inc.", is_tracked=False),
-            CompanyTickerFactory.build(cik=789019, ticker="MSFT", exchange="Nasdaq"),
-            CompanyTickerFactory.build(cik=320193, ticker="AAPL", exchange="Nasdaq"),
-            CompanyTickerFactory.build(cik=1652044, ticker="GOOGL", exchange="Nasdaq"),
-            CompanyTickerFactory.build(cik=1652044, ticker="GOOG", exchange="Nasdaq"),
-        ],
-    )
-
-
 async def listed_ciks(
     api_session: AsyncSession,
     filters: CompanyFilters = NO_COMPANY_FILTERS,
@@ -104,7 +89,10 @@ async def test_list_companies_embeds_every_ticker_of_a_company_in_its_one_row(
 async def test_list_companies_embeds_no_tickers_for_a_company_without_any(
     dbt_session: AsyncSession, api_session: AsyncSession
 ) -> None:
-    await add_rows(dbt_session, [CompanyFactory.build(cik=1000045, name="Nicholas Financial Inc")])
+    await add_rows(
+        dbt_session,
+        [CompanyFactory.build(cik=1000045, name="Nicholas Financial Inc", is_tracked=True)],
+    )
 
     companies = await PostgresCompanyRepository(api_session).list_companies(
         NO_COMPANY_FILTERS, FIRST_COMPANY_PAGE
@@ -115,29 +103,24 @@ async def test_list_companies_embeds_no_tickers_for_a_company_without_any(
     ]
 
 
-async def test_list_companies_sorts_by_cik(
-    dbt_session: AsyncSession, api_session: AsyncSession
-) -> None:
-    await add_three_companies(dbt_session)
-
+@pytest.mark.usefixtures("three_companies")
+async def test_list_companies_sorts_by_cik(api_session: AsyncSession) -> None:
     assert await listed_ciks(api_session) == [320193, 789019, 1652044]
 
 
+@pytest.mark.usefixtures("three_companies")
 async def test_list_companies_fetches_one_row_more_than_the_limit(
-    dbt_session: AsyncSession, api_session: AsyncSession
+    api_session: AsyncSession,
 ) -> None:
-    await add_three_companies(dbt_session)
-
     ciks = await listed_ciks(api_session, page=PageRequest(limit=1, after=None))
 
     assert ciks == [320193, 789019]
 
 
+@pytest.mark.usefixtures("three_companies")
 async def test_list_companies_resumes_after_the_cursor_in_cik_order(
-    dbt_session: AsyncSession, api_session: AsyncSession
+    api_session: AsyncSession,
 ) -> None:
-    await add_three_companies(dbt_session)
-
     ciks = await listed_ciks(
         api_session, page=PageRequest(limit=1, after=CompanySortKey(cik=320193))
     )
@@ -145,11 +128,10 @@ async def test_list_companies_resumes_after_the_cursor_in_cik_order(
     assert ciks == [789019, 1652044]
 
 
+@pytest.mark.usefixtures("three_companies")
 async def test_list_companies_by_ticker_keeps_the_company_s_other_tickers(
-    dbt_session: AsyncSession, api_session: AsyncSession
+    api_session: AsyncSession,
 ) -> None:
-    await add_three_companies(dbt_session)
-
     companies = await PostgresCompanyRepository(api_session).list_companies(
         CompanyFilters(ticker="GOOG"), FIRST_COMPANY_PAGE
     )
@@ -168,11 +150,10 @@ async def test_list_companies_by_ticker_keeps_the_company_s_other_tickers(
 
 
 @pytest.mark.parametrize(("is_tracked", "ciks"), [(True, [320193, 789019]), (False, [1652044])])
+@pytest.mark.usefixtures("three_companies")
 async def test_list_companies_by_is_tracked(
-    dbt_session: AsyncSession, api_session: AsyncSession, is_tracked: bool, ciks: list[int]
+    api_session: AsyncSession, is_tracked: bool, ciks: list[int]
 ) -> None:
-    await add_three_companies(dbt_session)
-
     assert await listed_ciks(api_session, CompanyFilters(is_tracked=is_tracked)) == ciks
 
 
@@ -188,19 +169,15 @@ async def test_list_companies_by_is_tracked(
         ("_pple", []),
     ],
 )
+@pytest.mark.usefixtures("three_companies")
 async def test_list_companies_by_name_prefix_in_any_case(
-    dbt_session: AsyncSession, api_session: AsyncSession, name: str, ciks: list[int]
+    api_session: AsyncSession, name: str, ciks: list[int]
 ) -> None:
-    await add_three_companies(dbt_session)
-
     assert await listed_ciks(api_session, CompanyFilters(name=name)) == ciks
 
 
-async def test_get_company_returns_its_details_and_tickers(
-    dbt_session: AsyncSession, api_session: AsyncSession
-) -> None:
-    await add_three_companies(dbt_session)
-
+@pytest.mark.usefixtures("three_companies")
+async def test_get_company_returns_its_details_and_tickers(api_session: AsyncSession) -> None:
     company = await PostgresCompanyRepository(api_session).get_company(320193)
 
     assert company == CompanyDetails(
@@ -229,39 +206,29 @@ async def test_company_exists(
     assert await PostgresCompanyRepository(api_session).company_exists(cik) is exists
 
 
-async def add_apple_filings(dbt_session: AsyncSession) -> None:
+async def test_list_filings_returns_every_curated_column(
+    dbt_session: AsyncSession, api_session: AsyncSession
+) -> None:
     await add_rows(
         dbt_session,
         [
             FilingFactory.build(
-                accession_number="0000320193-25-000073", form="10-Q", filing_date=date(2025, 8, 1)
-            ),
-            FilingFactory.build(
+                cik=320193,
                 accession_number="0000320193-25-000079",
                 form="10-K",
                 filing_date=date(2025, 10, 31),
-            ),
-            FilingFactory.build(
-                accession_number="0001140361-25-040270", form="4", filing_date=date(2025, 10, 31)
-            ),
-            FilingFactory.build(
-                accession_number="0000320193-25-000057", form="10-Q", filing_date=date(2025, 5, 2)
-            ),
-            # Another company's filing, never in Apple's list
-            FilingFactory.build(
-                cik=789019,
-                accession_number="0000950170-25-100235",
-                form="10-K",
-                filing_date=date(2025, 7, 30),
-            ),
+                report_date=date(2025, 9, 27),
+                accepted_at=datetime(2025, 10, 31, 10, 1, 26, tzinfo=UTC),
+                primary_document="aapl-20250927.htm",
+                is_xbrl=True,
+                is_inline_xbrl=True,
+                filing_url=(
+                    "https://www.sec.gov/Archives/edgar/data/320193/000032019325000079/"
+                    "0000320193-25-000079-index.htm"
+                ),
+            )
         ],
     )
-
-
-async def test_list_filings_returns_every_curated_column(
-    dbt_session: AsyncSession, api_session: AsyncSession
-) -> None:
-    await add_rows(dbt_session, [FilingFactory.build()])
 
     filings = await PostgresFilingRepository(api_session).list_filings(
         APPLE_CIK, NO_FILING_FILTERS, FIRST_FILING_PAGE
@@ -286,11 +253,10 @@ async def test_list_filings_returns_every_curated_column(
     ]
 
 
+@pytest.mark.usefixtures("apple_filings")
 async def test_list_filings_sorts_the_company_s_filings_by_date_then_accession_number_descending(
-    dbt_session: AsyncSession, api_session: AsyncSession
+    api_session: AsyncSession,
 ) -> None:
-    await add_apple_filings(dbt_session)
-
     assert await listed_accession_numbers(api_session) == [
         "0001140361-25-040270",
         "0000320193-25-000079",
@@ -299,11 +265,8 @@ async def test_list_filings_sorts_the_company_s_filings_by_date_then_accession_n
     ]
 
 
-async def test_list_filings_fetches_one_row_more_than_the_limit(
-    dbt_session: AsyncSession, api_session: AsyncSession
-) -> None:
-    await add_apple_filings(dbt_session)
-
+@pytest.mark.usefixtures("apple_filings")
+async def test_list_filings_fetches_one_row_more_than_the_limit(api_session: AsyncSession) -> None:
     accession_numbers = await listed_accession_numbers(
         api_session, page=PageRequest(limit=1, after=None)
     )
@@ -311,10 +274,10 @@ async def test_list_filings_fetches_one_row_more_than_the_limit(
     assert accession_numbers == ["0001140361-25-040270", "0000320193-25-000079"]
 
 
+@pytest.mark.usefixtures("apple_filings")
 async def test_list_filings_resumes_after_the_cursor_within_the_same_filing_date(
-    dbt_session: AsyncSession, api_session: AsyncSession
+    api_session: AsyncSession,
 ) -> None:
-    await add_apple_filings(dbt_session)
     after = FilingSortKey(filing_date=date(2025, 10, 31), accession_number="0001140361-25-040270")
 
     accession_numbers = await listed_accession_numbers(
@@ -328,9 +291,8 @@ async def test_list_filings_resumes_after_the_cursor_within_the_same_filing_date
     ]
 
 
-async def test_list_filings_by_form(dbt_session: AsyncSession, api_session: AsyncSession) -> None:
-    await add_apple_filings(dbt_session)
-
+@pytest.mark.usefixtures("apple_filings")
+async def test_list_filings_by_form(api_session: AsyncSession) -> None:
     assert await listed_accession_numbers(api_session, FilingFilters(form="10-Q")) == [
         "0000320193-25-000073",
         "0000320193-25-000057",
@@ -354,12 +316,10 @@ async def test_list_filings_by_form(dbt_session: AsyncSession, api_session: Asyn
         ),
     ],
 )
+@pytest.mark.usefixtures("apple_filings")
 async def test_list_filings_by_filing_date_bounds_both_inclusive(
-    dbt_session: AsyncSession,
     api_session: AsyncSession,
     filters: FilingFilters,
     accession_numbers: list[str],
 ) -> None:
-    await add_apple_filings(dbt_session)
-
     assert await listed_accession_numbers(api_session, filters) == accession_numbers

@@ -18,7 +18,7 @@ if TYPE_CHECKING:
     )
 
 
-def company_tickers() -> sa.ScalarSelect[object]:
+def tickers_subquery() -> sa.ScalarSelect[object]:
     """Return the company's tickers as one JSON array, sorted by ticker, empty when it has none.
 
     A subquery of the company row, so a page of companies is one query.
@@ -39,9 +39,10 @@ def company_tickers() -> sa.ScalarSelect[object]:
     )
 
 
-def company_summaries() -> sa.Select[int, str | None, bool | None, object]:
+def company_summary_query() -> sa.Select[int, str | None, bool | None, object]:
+    """Return the query of the companies list's columns, which the company details add to."""
     return sa.select(
-        Company.cik, Company.name, Company.is_tracked, company_tickers().label("tickers")
+        Company.cik, Company.name, Company.is_tracked, tickers_subquery().label("tickers")
     )
 
 
@@ -56,7 +57,7 @@ class PostgresCompanyRepository:
 
         The extra row tells `build_page` another page follows.
         """
-        query = company_summaries().order_by(Company.cik).limit(page.limit + 1)
+        query = company_summary_query().order_by(Company.cik).limit(page.limit + 1)
         if page.after is not None:
             query = query.where(Company.cik > page.after.cik)
         if filters.ticker is not None:
@@ -73,7 +74,7 @@ class PostgresCompanyRepository:
         return [CompanySummary.model_validate(row) for row in result.mappings()]
 
     async def get_company(self, cik: int) -> CompanyDetails | None:
-        query = company_summaries().add_columns(
+        query = company_summary_query().add_columns(
             Company.entity_type,
             Company.sic,
             Company.sic_description,
