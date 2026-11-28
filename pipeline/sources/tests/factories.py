@@ -3,7 +3,7 @@ from http import HTTPStatus
 
 from factory.base import Factory
 
-from pipeline.sources.http import FetchedResponse
+from pipeline.sources.types import FetchedResponse
 
 
 class FetchedResponseFactory(Factory[FetchedResponse]):

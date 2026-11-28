@@ -3,18 +3,21 @@ from typing import TYPE_CHECKING, Self
 
 import pydantic
 
-from pipeline.sources.edgar.envelopes import (
+from pipeline.sources.edgar.exceptions import UnexpectedPayloadError
+from pipeline.sources.edgar.types import (
     CompanyFactsEnvelope,
     SubmissionsEnvelope,
     TickersEnvelope,
 )
-from pipeline.sources.http import SourceClient, SourceRefusedError, SourceSettings
+from pipeline.sources.exceptions import SourceRefusedError
+from pipeline.sources.http import SourceClient
+from pipeline.sources.types import SourceSettings
 
 if TYPE_CHECKING:
     from types import TracebackType
 
     from pipeline.settings import EdgarSettings
-    from pipeline.sources.http import FetchedResponse
+    from pipeline.sources.types import FetchedResponse
 
 # SEC fair access: "no more than 10 requests per second",
 # per user and across all machines (https://www.sec.gov/about/developer-resources).
@@ -30,10 +33,6 @@ DATA_BASE_URL = "https://data.sec.gov"
 TICKERS_URL = f"{WWW_BASE_URL}/files/company_tickers_exchange.json"
 
 SOURCE_NAME = "SEC EDGAR"
-
-
-class UnexpectedPayloadError(Exception):
-    """A successful response whose body is not the dataset's envelope."""
 
 
 def edgar_source_settings(user_agent: str) -> SourceSettings:

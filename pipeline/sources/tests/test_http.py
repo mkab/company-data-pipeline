@@ -5,21 +5,14 @@ from typing import TYPE_CHECKING
 
 import httpx2
 import pytest
-import stamina
 
-from pipeline.sources.http import (
-    SourceClient,
-    SourceRefusedError,
-    SourceSettings,
-    SourceUnavailableError,
-    retry_after_backoff,
-)
+from pipeline.sources.exceptions import SourceRefusedError, SourceUnavailableError
+from pipeline.sources.http import SourceClient, retry_after_backoff
 from pipeline.sources.tests.fakes import FakeClock, ScriptedSource
+from pipeline.sources.types import SourceSettings
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Coroutine, Iterator
-
-    from stamina.instrumentation import RetryDetails
+    from collections.abc import Callable, Coroutine
 
     type Handler = (
         Callable[[httpx2.Request], httpx2.Response]
@@ -52,20 +45,6 @@ def make_client(
         clock=clock,
         sleep=clock.sleep,
     )
-
-
-@pytest.fixture
-def retry_waits() -> Iterator[list[float]]:
-    """Run stamina for real, and collect the wait it schedules before each retry."""
-    waits: list[float] = []
-
-    def record_wait(details: RetryDetails) -> None:
-        waits.append(details.wait_for)
-
-    stamina.instrumentation.set_on_retry_hooks([record_wait])
-    with stamina.set_testing(False):
-        yield waits
-    stamina.instrumentation.set_on_retry_hooks(None)
 
 
 @pytest.mark.anyio

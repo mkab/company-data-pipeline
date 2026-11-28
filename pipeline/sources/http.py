@@ -1,18 +1,26 @@
 import asyncio
 import logging
 import time
-from dataclasses import dataclass
 from datetime import UTC, datetime
 from http import HTTPStatus
 from typing import TYPE_CHECKING, Self
-from urllib.parse import urlsplit, urlunsplit
 
 import httpx2
 import stamina
 
+from pipeline.sources.exceptions import (
+    RetryableStatusError,
+    SourceRefusedError,
+    SourceUnavailableError,
+)
+from pipeline.sources.types import FetchedResponse
+from pipeline.sources.urls import url_without_query
+
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
     from types import TracebackType
+
+    from pipeline.sources.types import SourceSettings
 
 logger = logging.getLogger(__name__)
 # httpx2 logs every request at INFO with its query string: the line per attempt below replaces it
@@ -30,74 +38,6 @@ RETRYABLE_STATUSES = frozenset(
 )
 # Only these two say how long to wait in `Retry-After`
 RETRY_AFTER_STATUSES = frozenset({HTTPStatus.TOO_MANY_REQUESTS, HTTPStatus.SERVICE_UNAVAILABLE})
-
-
-@dataclass(frozen=True)
-class SourceSettings:
-    """How one source is called: who we are, how fast, and how patiently.
-
-    Durations are in seconds.
-    `retry_timeout` caps the time spent on all the attempts of one fetch.
-    """
-
-    name: str
-    user_agent: str
-    requests_per_second: float
-    max_in_flight: int
-    connect_timeout: float = 5.0
-    read_timeout: float = 30.0
-    write_timeout: float = 5.0
-    pool_timeout: float = 5.0
-    attempts: int = 5
-    retry_timeout: float = 60.0
-    wait_initial: float = 1.0
-    wait_max: float = 30.0
-    wait_jitter: float = 1.0
-
-
-@dataclass(frozen=True)
-class FetchedResponse:
-    """One response from a source, with its body exactly as received."""
-
-    url: str
-    status: int
-    fetched_at: datetime
-    body: bytes
-
-
-class SourceUnavailableError(Exception):
-    """Every attempt failed on a transport error, a rate limit or a server error."""
-
-
-class SourceRefusedError(Exception):
-    """The source answered with a status that retrying will not change.
-
-    `response` is that answer, so a caller can still record it.
-    """
-
-    def __init__(self, source_name: str, response: FetchedResponse) -> None:
-        message = f"{source_name} refused {url_without_query(response.url)} with status {response.status}"
-        if response.status == HTTPStatus.FORBIDDEN:
-            message += (
-                ": check the User-Agent the source asks for,"
-                " or whether it has blocked this IP address"
-            )
-        super().__init__(message)
-        self.response = response
-
-
-class _RetryableStatusError(Exception):
-    """A response worth another attempt, raised inside the retry block only."""
-
-    def __init__(self, response: FetchedResponse, retry_after: str | None) -> None:
-        super().__init__(f"status {response.status}")
-        self.response = response
-        self.retry_after = retry_after
-
-
-def url_without_query(url: str) -> str:
-    """Return `url` without its query string or fragment."""
-    return urlunsplit(urlsplit(url)._replace(query="", fragment=""))
 
 
 def retry_after_backoff(status: int, retry_after: str | None, *, wait_max: float) -> float | None:
@@ -206,7 +146,7 @@ class SourceClient:
                 f"{settings.name} is unavailable at {url_without_query(url)}: "
                 f"{type(error).__name__}"
             ) from error
-        except _RetryableStatusError as error:
+        except RetryableStatusError as error:
             raise SourceUnavailableError(
                 f"{settings.name} is unavailable at {url_without_query(url)}: {error}"
             ) from error
@@ -230,7 +170,7 @@ class SourceClient:
             body=response.content,
         )
         if response.status_code in RETRYABLE_STATUSES:
-            raise _RetryableStatusError(fetched, response.headers.get("Retry-After"))
+            raise RetryableStatusError(fetched, response.headers.get("Retry-After"))
         if not response.is_success:
             raise SourceRefusedError(self._settings.name, fetched)
         return fetched
@@ -249,7 +189,7 @@ class SourceClient:
         """Tell stamina whether to retry `error`, and how long to wait when the source said."""
         if isinstance(error, httpx2.TransportError):
             return True
-        if not isinstance(error, _RetryableStatusError):
+        if not isinstance(error, RetryableStatusError):
             return False
         backoff = retry_after_backoff(
             error.response.status, error.retry_after, wait_max=self._settings.wait_max

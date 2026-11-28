@@ -6,6 +6,7 @@ import sqlalchemy as sa
 from pipeline.database import include_managed_schemas, session_scope
 from pipeline.raw.models import EdgarPayload
 from pipeline.raw.tests.factories import EdgarPayloadFactory
+from pipeline.tests.exceptions import SessionScopeError
 
 if TYPE_CHECKING:
     from alembic.runtime.environment import NameFilterType
@@ -29,10 +30,6 @@ def test_include_managed_schemas_keeps_only_the_alembic_schemas(
 @pytest.mark.parametrize("type_", ["table", "column", "index"])
 def test_include_managed_schemas_keeps_every_name_below_a_schema(type_: NameFilterType) -> None:
     assert include_managed_schemas("company", type_, {"schema_name": "raw"}) is True
-
-
-class SessionScopeError(Exception):
-    pass
 
 
 async def count_payloads() -> int:

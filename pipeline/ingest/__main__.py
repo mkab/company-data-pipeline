@@ -15,7 +15,7 @@ from pipeline.settings import EdgarSettings
 from pipeline.sources.edgar.client import EdgarClient
 
 if TYPE_CHECKING:
-    from pipeline.ingest.tracked_companies import TrackedCompany
+    from pipeline.ingest.types import TrackedCompany
 
 EXIT_SUCCESS = 0
 EXIT_FAILURE = 1
