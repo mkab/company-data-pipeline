@@ -1,29 +1,9 @@
-from typing import Annotated
-
 import pytest
-from fastapi import Depends, FastAPI
-from pydantic import BaseModel
 
-from pipeline.api.cik import PaddedCik, cik_from_path
-from pipeline.api.problems import add_problem_handlers
+from pipeline.api.tests.apps import app_with_a_cik_path
 from pipeline.api.tests.clients import client_for
 
 pytestmark = pytest.mark.anyio
-
-
-class CompanyResponse(BaseModel):
-    cik: PaddedCik
-
-
-def app_with_a_cik_path() -> FastAPI:
-    app = FastAPI()
-    add_problem_handlers(app)
-
-    @app.get("/companies/{cik}")
-    async def company(cik: Annotated[int, Depends(cik_from_path)]) -> CompanyResponse:
-        return CompanyResponse(cik=cik)
-
-    return app
 
 
 @pytest.mark.parametrize(

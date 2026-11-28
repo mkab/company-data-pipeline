@@ -4,19 +4,17 @@ import pytest
 import sqlalchemy as sa
 
 from pipeline.curated.drift import (
-    ColumnShape,
     built_columns,
     declared_columns,
     describe_drift,
     main,
     report_drift,
 )
+from pipeline.curated.types import ColumnShape
 from pipeline.database import CURATED_SCHEMA, curated_metadata
-from pipeline.tests.roles import clear_database_caches, connecting_as, role_database_url
+from pipeline.tests.roles import connecting_as
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator
-
     from sqlalchemy.ext.asyncio import AsyncConnection
 
 COMPANY_CIK = ColumnShape(table="companies", column="cik", data_type="bigint", is_nullable=False)
@@ -115,18 +113,6 @@ async def test_a_column_renamed_in_the_database_alone_is_drift() -> None:
         "Declared but not built: companies.name text null",
         "Built but not declared: companies.company_name text null",
     ]
-
-
-@pytest.fixture
-def drift_check_as_api(monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
-    """Point `DATABASE_URL` at the api role, as `make curated-drift` runs.
-
-    `main` runs its own event loop and disposes of the engine itself.
-    """
-    monkeypatch.setenv("DATABASE_URL", role_database_url("api"))
-    clear_database_caches()
-    yield
-    clear_database_caches()
 
 
 @pytest.mark.usefixtures("drift_check_as_api")

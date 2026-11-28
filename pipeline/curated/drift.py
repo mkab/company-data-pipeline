@@ -7,12 +7,12 @@ so a dbt change the Python side does not follow fails CI instead of a request.
 
 import asyncio
 import logging
-from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 import sqlalchemy as sa
 
 import pipeline.curated.models  # noqa: F401  # registers the curated tables on `curated_metadata`
+from pipeline.curated.types import ColumnShape
 from pipeline.database import CURATED_SCHEMA, curated_metadata, get_engine
 
 if TYPE_CHECKING:
@@ -28,20 +28,6 @@ BUILT_COLUMNS_QUERY = sa.text(
     " FROM information_schema.columns"
     " WHERE table_schema = :schema"
 )
-
-
-@dataclass(frozen=True, order=True)
-class ColumnShape:
-    """A column as PostgreSQL's `information_schema.columns` describes it, such as `bigint` for its type."""
-
-    table: str
-    column: str
-    data_type: str
-    is_nullable: bool
-
-    def describe(self) -> str:
-        nullability = "null" if self.is_nullable else "not null"
-        return f"{self.table}.{self.column} {self.data_type} {nullability}"
 
 
 def declared_columns(metadata: MetaData, dialect: Dialect) -> set[ColumnShape]:

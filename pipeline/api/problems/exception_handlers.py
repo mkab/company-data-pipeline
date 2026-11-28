@@ -1,61 +1,18 @@
-"""Every error response is an RFC 9457 problem detail, served as `application/problem+json`."""
-
 from http import HTTPStatus
 from typing import TYPE_CHECKING
 
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel
 from starlette.exceptions import HTTPException
+
+from pipeline.api.problems.constants import INVALID_REQUEST_DETAIL, PROBLEM_MEDIA_TYPE
+from pipeline.api.problems.titles import status_title
+from pipeline.api.problems.types import InvalidParameter, ProblemDetail, ValidationProblem
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
 
     from fastapi import FastAPI, Request
-
-PROBLEM_MEDIA_TYPE = "application/problem+json"
-
-# RFC 9457:
-# a problem with no type of its own is `about:blank`, and its title is the status phrase
-BLANK_PROBLEM_TYPE = "about:blank"
-
-INVALID_REQUEST_DETAIL = "One or more request parameters are not valid"
-
-
-class ProblemDetail(BaseModel):
-    type: str = BLANK_PROBLEM_TYPE
-    title: str
-    status: int
-    detail: str
-
-
-class InvalidParameter(BaseModel):
-    """One parameter a validation error names: where it is (such as `["query", "limit"]`), and why."""
-
-    location: list[str | int]
-    message: str
-
-
-class ValidationProblem(ProblemDetail):
-    """A 422, with the `errors` extension member listing each invalid parameter."""
-
-    errors: list[InvalidParameter]
-
-
-def sentence_case(phrase: str) -> str:
-    """Return the phrase in sentence case, keeping its first word and every acronym as they are.
-
-    `"Not Found"` becomes `"Not found"`, and `"HTTP Version Not Supported"` becomes `"HTTP version not supported"`.
-    """
-    first_word, *other_words = phrase.split(" ")
-    words = [first_word]
-    for word in other_words:
-        words.append(word if word.isupper() else word.lower())
-    return " ".join(words)
-
-
-def status_title(status: int) -> str:
-    return sentence_case(HTTPStatus(status).phrase)
 
 
 def problem_response(
@@ -102,7 +59,7 @@ async def validation_exception_handler(
     return problem_response(problem)
 
 
-def add_problem_handlers(app: FastAPI) -> None:
+def add_exception_handlers(app: FastAPI) -> None:
     # Starlette types a handler as taking any `Exception`,
     # though it only ever calls one with the class it is registered for
     app.add_exception_handler(HTTPException, http_exception_handler)  # type: ignore[arg-type]

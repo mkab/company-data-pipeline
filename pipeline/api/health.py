@@ -1,24 +1,20 @@
 from http import HTTPStatus
-from typing import Annotated, Literal
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
 from sqlalchemy.exc import DBAPIError
 
 # FastAPI reads the route signature at runtime
 from sqlalchemy.ext.asyncio import AsyncSession  # noqa: TC002
 
 from pipeline.api.dependencies import get_session
-from pipeline.api.problems import ProblemDetail
+from pipeline.api.problems.types import ProblemDetail
+from pipeline.api.types import HealthResponse
 from pipeline.database import ping_database
 
 DATABASE_UNREACHABLE_DETAIL = "The database is unreachable"
 
 router = APIRouter(prefix="/health")
-
-
-class HealthResponse(BaseModel):
-    status: Literal["ok"]
 
 
 @router.get("")

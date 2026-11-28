@@ -2,28 +2,10 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from pipeline.database import get_engine
-from pipeline.tests.roles import clear_database_caches
-
 if TYPE_CHECKING:
-    from collections.abc import AsyncIterator
-
     from httpx2 import AsyncClient
 
 pytestmark = pytest.mark.anyio
-
-# Port 1 has no listener,
-# so connecting is refused at once
-UNREACHABLE_DATABASE_URL = "postgresql+psycopg://api:api@localhost:1/pipeline_test"
-
-
-@pytest.fixture
-async def database_down(monkeypatch: pytest.MonkeyPatch) -> AsyncIterator[None]:
-    monkeypatch.setenv("DATABASE_URL", UNREACHABLE_DATABASE_URL)
-    clear_database_caches()
-    yield
-    await get_engine().dispose()
-    clear_database_caches()
 
 
 async def test_health_returns_ok(client: AsyncClient) -> None:
