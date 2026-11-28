@@ -50,7 +50,7 @@ def fetches() -> FakeEdgarFetchRepository:
 
 
 @pytest.fixture
-def service(
+def edgar_fetch_service(
     payloads: FakeEdgarPayloadRepository, fetches: FakeEdgarFetchRepository
 ) -> EdgarFetchService:
     return EdgarFetchService(payloads, fetches)
