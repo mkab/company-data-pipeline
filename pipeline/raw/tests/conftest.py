@@ -3,6 +3,8 @@ from typing import TYPE_CHECKING
 import pytest
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
+from pipeline.raw.services import EdgarFetchService
+from pipeline.raw.tests.fakes import FakeEdgarFetchRepository, FakeEdgarPayloadRepository
 from pipeline.tests.roles import connecting_as, empty_raw_tables
 
 if TYPE_CHECKING:
@@ -35,3 +37,20 @@ async def ingest_session(ingest_engine: AsyncEngine) -> AsyncIterator[AsyncSessi
 async def empty_raw_tables_after_test() -> AsyncIterator[None]:
     yield
     await empty_raw_tables()
+
+
+@pytest.fixture
+def payloads() -> FakeEdgarPayloadRepository:
+    return FakeEdgarPayloadRepository()
+
+
+@pytest.fixture
+def fetches() -> FakeEdgarFetchRepository:
+    return FakeEdgarFetchRepository()
+
+
+@pytest.fixture
+def service(
+    payloads: FakeEdgarPayloadRepository, fetches: FakeEdgarFetchRepository
+) -> EdgarFetchService:
+    return EdgarFetchService(payloads, fetches)

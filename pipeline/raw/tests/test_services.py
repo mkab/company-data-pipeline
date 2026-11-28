@@ -7,33 +7,17 @@ import sqlalchemy as sa
 from pipeline.raw.enums import EdgarDataset
 from pipeline.raw.models import EdgarFetch, EdgarPayload
 from pipeline.raw.services import EdgarFetchService
-from pipeline.raw.tests.fakes import FakeEdgarFetchRepository, FakeEdgarPayloadRepository
 from pipeline.sources.tests.factories import FetchedResponseFactory
 
 if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio import AsyncSession
 
+    from pipeline.raw.tests.fakes import FakeEdgarFetchRepository, FakeEdgarPayloadRepository
+
 pytestmark = pytest.mark.anyio
 
 # sha256 of b'{"cik": "0000320193", "name": "Apple Inc."}'
 BODY_SHA256 = bytes.fromhex("222b12d093f0ec3682d3e168e59a0e3bec3e623cdf812d0192400f1422ca0ebb")
-
-
-@pytest.fixture
-def payloads() -> FakeEdgarPayloadRepository:
-    return FakeEdgarPayloadRepository()
-
-
-@pytest.fixture
-def fetches() -> FakeEdgarFetchRepository:
-    return FakeEdgarFetchRepository()
-
-
-@pytest.fixture
-def service(
-    payloads: FakeEdgarPayloadRepository, fetches: FakeEdgarFetchRepository
-) -> EdgarFetchService:
-    return EdgarFetchService(payloads, fetches)
 
 
 async def test_a_new_body_is_stored_under_its_sha256(
