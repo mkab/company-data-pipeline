@@ -16,7 +16,8 @@ class Company(CuratedModelBase):
 
     cik: Mapped[int] = mapped_column(sa.BigInteger, primary_key=True)
     name: Mapped[str | None] = mapped_column(sa.Text)
-    is_tracked: Mapped[bool | None] = mapped_column(sa.Boolean)
+    # Not null in the dbt contract, so a filter on it matches every company
+    is_tracked: Mapped[bool] = mapped_column(sa.Boolean)
     entity_type: Mapped[str | None] = mapped_column(sa.Text)
     sic: Mapped[str | None] = mapped_column(sa.Text)
     sic_description: Mapped[str | None] = mapped_column(sa.Text)
@@ -38,7 +39,8 @@ class Filing(CuratedModelBase):
     cik: Mapped[int] = mapped_column(sa.BigInteger, primary_key=True)
     accession_number: Mapped[str] = mapped_column(sa.Text, primary_key=True)
     form: Mapped[str | None] = mapped_column(sa.Text)
-    filing_date: Mapped[date | None] = mapped_column(sa.Date)
+    # Not null in the dbt contract, since the filings list is sorted by it
+    filing_date: Mapped[date] = mapped_column(sa.Date)
     report_date: Mapped[date | None] = mapped_column(sa.Date)
     accepted_at: Mapped[datetime | None] = mapped_column(sa.DateTime(timezone=True))
     primary_document: Mapped[str | None] = mapped_column(sa.Text)

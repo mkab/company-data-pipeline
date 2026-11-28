@@ -11,7 +11,7 @@ from pipeline.api.pagination.constants import (
 )
 from pipeline.api.pagination.cursors import decode_cursor
 from pipeline.api.pagination.exceptions import InvalidCursorError
-from pipeline.api.pagination.types import PageRequest
+from pipeline.pagination.types import PageRequest
 
 if TYPE_CHECKING:
     from collections.abc import Callable

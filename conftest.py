@@ -6,14 +6,22 @@ import pytest
 from alembic import command
 from alembic.config import Config
 from sqlalchemy import make_url
+from sqlalchemy.ext.asyncio import async_sessionmaker
 
 from pipeline.database import get_engine
 from pipeline.settings import get_migration_settings, get_settings
-from pipeline.tests.curated import create_curated_tables
-from pipeline.tests.roles import clear_database_caches, empty_raw_tables, role_database_url
+from pipeline.tests.curated import create_curated_tables, empty_curated_tables
+from pipeline.tests.roles import (
+    clear_database_caches,
+    connecting_as,
+    empty_raw_tables,
+    role_database_url,
+)
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Iterator
+
+    from sqlalchemy.ext.asyncio import AsyncSession
 
 # Created by docker/initdb next to the development database
 TEST_DATABASE_NAME = "pipeline_test"
@@ -102,3 +110,15 @@ async def database_url_as_ingest(monkeypatch: pytest.MonkeyPatch) -> AsyncIterat
     await get_engine().dispose()
     clear_database_caches()
     await empty_raw_tables()
+
+
+@pytest.fixture
+async def dbt_session() -> AsyncIterator[AsyncSession]:
+    """Yield a session as the dbt role, which owns the curated tables, committed at the end.
+
+    Shared by the curated and API tests, which write curated rows through it.
+    The curated tables are emptied afterwards.
+    """
+    async with connecting_as("dbt") as engine, async_sessionmaker(engine).begin() as session:
+        yield session
+    await empty_curated_tables()

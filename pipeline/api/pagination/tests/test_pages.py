@@ -3,7 +3,8 @@ from datetime import date
 from pipeline.api.pagination.cursors import encode_cursor
 from pipeline.api.pagination.pages import build_page
 from pipeline.api.pagination.tests.types import Filing, FilingSortKey
-from pipeline.api.pagination.types import Page, PageRequest
+from pipeline.api.pagination.types import Page
+from pipeline.pagination.types import PageRequest
 
 FIRST_FILING = Filing(
     filing_date=date(2025, 10, 31), accession_number="0000320193-25-000079", form="10-K"
