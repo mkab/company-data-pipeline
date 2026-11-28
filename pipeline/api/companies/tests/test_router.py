@@ -185,3 +185,20 @@ async def test_list_filings_rejects_a_bad_filter_with_a_422(client: AsyncClient)
 
     assert response.status_code == 422
     assert response.json()["errors"][0]["location"] == ["query", "filed_from"]
+
+
+@pytest.mark.parametrize(
+    ("path", "params", "location"),
+    [
+        ("/v1/companies", {"ticker": ""}, ["query", "ticker"]),
+        ("/v1/companies", {"name": ""}, ["query", "name"]),
+        ("/v1/companies/320193/filings", {"form": ""}, ["query", "form"]),
+    ],
+)
+async def test_an_empty_text_filter_is_a_422(
+    client: AsyncClient, path: str, params: dict[str, str], location: list[str]
+) -> None:
+    response = await client.get(path, params=params)
+
+    assert response.status_code == 422
+    assert response.json()["errors"][0]["location"] == location

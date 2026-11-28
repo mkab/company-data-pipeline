@@ -21,12 +21,16 @@ class ColumnShape:
 
 
 class CompanyFilters(BaseModel):
-    """The filters of the companies list, each one left out when `None`."""
+    """The filters of the companies list, each one left out when `None`, and never empty."""
 
-    ticker: str | None = Field(default=None, description="Companies listing this ticker")
+    ticker: str | None = Field(
+        default=None, min_length=1, description="Companies listing this ticker, in any case"
+    )
     is_tracked: bool | None = Field(default=None, description="Tracked companies, or the others")
     name: str | None = Field(
-        default=None, description="Companies whose name starts with this, in any case"
+        default=None,
+        min_length=1,
+        description="Companies whose name starts with this, in any case",
     )
 
 
@@ -64,9 +68,11 @@ class CompanyDetails(CompanySummary):
 
 
 class FilingFilters(BaseModel):
-    """The filters of a company's filings list, each one left out when `None`."""
+    """The filters of a company's filings list, each one left out when `None`, and never empty."""
 
-    form: str | None = Field(default=None, description="Filings of this form, such as `10-K`")
+    form: str | None = Field(
+        default=None, min_length=1, description="Filings of this form, such as `10-K`"
+    )
     filed_from: date | None = Field(default=None, description="Filings filed on or after this day")
     filed_to: date | None = Field(default=None, description="Filings filed on or before this day")
 

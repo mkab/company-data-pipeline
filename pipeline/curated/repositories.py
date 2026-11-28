@@ -63,7 +63,10 @@ class PostgresCompanyRepository:
         if filters.ticker is not None:
             query = query.where(
                 sa.exists().where(
-                    CompanyTicker.cik == Company.cik, CompanyTicker.ticker == filters.ticker
+                    CompanyTicker.cik == Company.cik,
+                    # The tickers file lists every ticker in uppercase,
+                    # so uppercasing the filter matches it in any case
+                    CompanyTicker.ticker == filters.ticker.upper(),
                 )
             )
         if filters.is_tracked is not None:

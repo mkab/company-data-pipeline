@@ -323,3 +323,11 @@ async def test_list_filings_by_filing_date_bounds_both_inclusive(
     accession_numbers: list[str],
 ) -> None:
     assert await listed_accession_numbers(api_session, filters) == accession_numbers
+
+
+@pytest.mark.usefixtures("three_companies")
+@pytest.mark.parametrize("ticker", ["goog", "Goog"])
+async def test_list_companies_by_ticker_in_any_case(
+    api_session: AsyncSession, ticker: str
+) -> None:
+    assert await listed_ciks(api_session, CompanyFilters(ticker=ticker)) == [1652044]
