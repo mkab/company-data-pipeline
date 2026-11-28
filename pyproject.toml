@@ -143,6 +143,7 @@ runtime-evaluated-base-classes = [
   # SQLAlchemy reads the `Mapped[...]` annotations of every model
   "sqlalchemy.orm.DeclarativeBase",
   "pipeline.database.ModelBase",
+  "pipeline.database.CuratedModelBase",
 ]
 
 

@@ -25,6 +25,8 @@ help:
 	@echo "                 	(\`make tests\` empties them again)"
 	@echo "  dbt            	run dbt in its container (ARGS=<dbt command and options>, build by default)"
 	@echo "                 	(ARGS=\"build --target test\" builds against the test database, after seed-test)"
+	@echo "  curated-drift  	compare the test database's curated columns with their Python declaration"
+	@echo "                 	(after \`make dbt ARGS="build --target test"\`, as CI does)"
 	@echo "  pipeline       	ingest, then dbt build"
 	@echo "  lint           	run the code linters, without fixing anything (lint-migrations included)"
 	@echo "  lint-migrations	lint the SQL of every migration revision with Squawk"
@@ -109,6 +111,12 @@ seed-test:
 dbt:
 	@# The `dbt` service connects as the dbt role, which reads raw and owns staging and curated
 	docker compose run --rm dbt dbt $(or $(ARGS),build)
+
+.PHONY: curated-drift
+curated-drift:
+	@# As the api role, which reads every curated table, on the test database dbt built
+	@# The password reaches the container through `.env`
+	$(APP_RUN) sh -c 'DATABASE_URL="postgresql+psycopg://api:$$API_DB_PASSWORD@db:5432/pipeline_test" python -m pipeline.curated.drift'
 
 .PHONY: pipeline
 pipeline:

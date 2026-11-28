@@ -7,9 +7,10 @@ from alembic import command
 from alembic.config import Config
 from sqlalchemy import make_url
 
-from pipeline.database import get_engine, get_sessionmaker
+from pipeline.database import get_engine
 from pipeline.settings import get_migration_settings, get_settings
-from pipeline.tests.roles import empty_raw_tables, role_database_url
+from pipeline.tests.curated import create_curated_tables
+from pipeline.tests.roles import clear_database_caches, empty_raw_tables, role_database_url
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Iterator
@@ -28,12 +29,6 @@ def with_test_database_name(url: str) -> str:
 def clear_settings_caches() -> None:
     get_settings.cache_clear()
     get_migration_settings.cache_clear()
-
-
-def clear_database_caches() -> None:
-    get_settings.cache_clear()
-    get_engine.cache_clear()
-    get_sessionmaker.cache_clear()
 
 
 @pytest.fixture
@@ -68,6 +63,29 @@ def migrated_test_database(point_settings_at_test_database: None) -> None:
     """
     command.upgrade(Config(ALEMBIC_CONFIG_PATH), "head")
     asyncio.run(empty_raw_tables())
+
+
+@pytest.fixture(scope="session", autouse=True)
+def curated_test_tables(point_settings_at_test_database: None) -> None:
+    """Create the curated tables in the test database, empty, once per session.
+
+    They replace any `make dbt ARGS="build --target test"` built,
+    so a test never starts on dbt's rows.
+    """
+    asyncio.run(create_curated_tables())
+
+
+@pytest.fixture
+async def database_url_as_api(monkeypatch: pytest.MonkeyPatch) -> AsyncIterator[None]:
+    """Point `DATABASE_URL`, and so `session_scope`, at the api role, as the API connects.
+
+    Each test runs on its own event loop, so the cached engine is disposed of after it.
+    """
+    monkeypatch.setenv("DATABASE_URL", role_database_url("api"))
+    clear_database_caches()
+    yield
+    await get_engine().dispose()
+    clear_database_caches()
 
 
 @pytest.fixture

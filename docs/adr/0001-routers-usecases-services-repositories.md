@@ -19,13 +19,15 @@ repository  reads and writes the database, nothing else       (no business rules
 ```
 
 - A router calls a usecase, or a service directly when the action needs only one.
+- Health checks are infrastructure, not business: a health route may call `pipeline.database` (such as `ping_database`) with no service between.
 - Business rules live in usecases and services, never in routers or repositories.
 - A service depends on repository `Protocol`s (in the package's `protocols.py`), never on a concrete repository (in its `repositories.py`). The Postgres implementations (`Postgres...Repository`) satisfy them in the application, and in-memory fakes (`Fake...Repository`, in the package's `tests/fakes.py`) in unit tests.
 - Models are declarative: every table is a class inheriting from `pipeline.database.ModelBase` (a `DeclarativeBase`), which carries the standard columns.
+  The curated tables dbt builds, which the API only reads, inherit from `pipeline.database.CuratedModelBase` instead, with no standard columns (#24).
 - Repositories and services are small classes that take their dependencies in `__init__`, so a FastAPI dependency and the CLI build them the same way.
   A service may add a `from_session(session)` classmethod that builds its repositories over one session, the shortcut both callers use.
 - **Transactions**: `pipeline.database.session_scope()` is the one place a session is opened, committed on success and rolled back on error (the error is re-raised, never swallowed).
-  The outermost caller opens it: for a route, a `get_session` dependency (added with the first route that reads the database, #24), and for the CLI, its entry point (a usecase, or the command itself when it calls one service).
+  The outermost caller opens it: for a route, the `pipeline.api.dependencies.get_session` dependency, and for the CLI, its entry point (a usecase, or the command itself when it calls one service).
   Services and repositories take the session and never commit, so a usecase that calls two services stays one transaction.
 
 ## Testing

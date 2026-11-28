@@ -22,6 +22,9 @@ if TYPE_CHECKING:
 RAW_SCHEMA = "raw"
 ALEMBIC_SCHEMAS = frozenset({RAW_SCHEMA})
 
+# dbt builds the tables of this schema, and the API reads them
+CURATED_SCHEMA = "curated"
+
 # Named constraints let a later migration refer to them, as the recipes in docs/migrations.md do
 NAMING_CONVENTION = {
     "ix": "%(table_name)s_%(column_0_N_name)s_index",
@@ -60,6 +63,21 @@ class ModelBase(DeclarativeBase):
     )
 
 
+# The curated tables are declared on their own metadata, which Alembic never sees.
+# They exist to be read, and the drift check compares them with what dbt built
+curated_metadata = MetaData(schema=CURATED_SCHEMA)
+
+
+class CuratedModelBase(DeclarativeBase):
+    """The base of every curated table, which dbt builds and the API reads.
+
+    Unlike `ModelBase`, it adds no standard columns:
+    dbt rebuilds the tables every run, so a row has only its natural key, and no `id` or `uuid`.
+    """
+
+    metadata = curated_metadata
+
+
 @cache
 def get_engine() -> AsyncEngine:
     """Return the engine for `DATABASE_URL`, created on first call."""
@@ -82,6 +100,13 @@ async def session_scope() -> AsyncIterator[AsyncSession]:
     """
     async with get_sessionmaker().begin() as session:
         yield session
+
+
+async def ping_database(session: AsyncSession) -> None:
+    """Run `SELECT 1`,
+    which raises `sqlalchemy.exc.DBAPIError` when the database is unreachable.
+    """
+    await session.execute(sa.select(1))
 
 
 def include_managed_schemas(

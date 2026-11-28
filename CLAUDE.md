@@ -24,6 +24,7 @@ make migrations-check    # drop dbt's schemas, then upgrade head, alembic check,
 make ingest              # fetch the tickers file and the tracked companies (`config/tracked_companies.toml`) into raw, as the ingest role (needs EDGAR_USER_AGENT)
 make seed-test           # migrate pipeline_test and load the committed EDGAR fixtures (`pipeline/seed_test/fixtures`) into its raw, as the ingest role
 make dbt [ARGS=]         # dbt in its container, as the dbt role (default `build`; `ARGS="build --target test"` after seed-test)
+make curated-drift       # compare pipeline_test's curated columns with `pipeline.curated.models`, as the api role (after a test dbt build; in CI)
 make pipeline            # make ingest, then dbt build
 make lint                # ruff format --check, ruff check, mypy (no fixes), lint-migrations, on the host
 make lint-migrations     # Squawk over each revision's offline SQL (`.squawk.toml`), on the host
@@ -46,11 +47,13 @@ Ruff (`pyproject.toml`) enforces most of these, plus no naive datetimes (`DTZ`),
 
 - **Layers: router, usecase, service, repository** (`docs/adr/0001-routers-usecases-services-repositories.md`). Business rules live in usecases and services; repositories only query.
 - **Tables are declarative models** inheriting from `pipeline.database.ModelBase`, never Core `sa.Table`s. `ModelBase` and `DeclarativeBase` are in ruff's `runtime-evaluated-base-classes`, since SQLAlchemy reads `Mapped[...]` at runtime.
+- **Curated tables are the exception to `ModelBase`**: dbt builds them, so their models (`pipeline/curated/models.py`) inherit from `pipeline.database.CuratedModelBase`, which adds no standard columns and keeps them off Alembic's metadata. Each mirrors its dbt contract (`dbt/models/curated/_curated__models.yml`): change both together, or `make curated-drift` fails CI.
 - **Never build SQL from strings.** Every value reaches the database as a bound parameter, never by f-string, `%` or `.format()` into the statement (ruff `S608`). This covers the Python code; dbt models are SQL by design and take values through `ref`, `source` and `var`, not string building.
 - **Types: strict mypy.** Every first-party module is fully annotated, and no module is relaxed by a `[[tool.mypy.overrides]]` entry. Overrides are only for third-party packages that ship no types. A `# type: ignore` names its error code and a comment says why.
 - **Names used only in type hints are imported under `if TYPE_CHECKING:`**, and the annotation stays unquoted (ruff strict `TC001`-`TC004`, `UP037`). Exception: FastAPI and pydantic read annotations at runtime, so a name in a route or dependency signature, or in a pydantic model, must be a real import. `pydantic.BaseModel` is listed in ruff's `runtime-evaluated-base-classes`; a new runtime reader is added there.
 - **Imports go at the top of the module**, absolute only (no relative imports). Keep a function-level import only when a real cycle forces it, with a comment naming it. Import a name from the module that defines it, never from one that merely imports it.
 - **Enums go in their package's `enums.py`, and constants in its `constants.py`** (a constant used by one module only may sit at the top of it, directly under the imports). Never partway down a file between classes.
+- **Exceptions go in their package's `exceptions.py`, and dataclasses and pydantic models in its `types.py`** (SQLAlchemy models stay in `models.py`). A module that would hold several of these kinds, or several jobs, becomes a package with one file per kind or job, such as `pipeline/api/pagination/` (`types.py`, `exceptions.py`, `constants.py`, `cursors.py`, `dependencies.py`, `pages.py`).
 - **No `print`** in application code (ruff `T20`): use the logger.
 - **User-facing copy is sentence case**: every error message and response text. Proper nouns and acronyms keep their case.
 
@@ -78,6 +81,8 @@ The judgement rules (backward compatibility, drops over several releases, a roll
 ## Testing
 
 pytest. Test data comes from factories (factory_boy), in a `factories.py` next to the tests of the package whose rows they build. A test calls a factory with the fields it relies on, as literals. A fixture is a named scenario several tests reuse; the root `conftest.py` holds no test data, only global patches and shared utilities.
+
+A test module holds its tests, its constants at the top, and helpers only its tests use. Test-only classes and models never sit in it: they go in the tests package's `types.py`, a test app (a throwaway FastAPI app around one dependency or handler) in its `apps.py`, other shared helpers in a module named for what they do (such as `clients.py`), and fixtures in a `conftest.py`. A conftest only defines fixtures: a test never imports from it.
 
 Tests never call a real external source: they run against recorded or mocked responses.
 
