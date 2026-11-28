@@ -3,15 +3,16 @@ from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
-from pipeline.api.cik import cik_from_path, padded_cik
+from pipeline.api.cik import cik_from_path
 from pipeline.api.companies.constants import COMPANY_NOT_FOUND_DETAIL
 from pipeline.api.companies.dependencies import company_service
 from pipeline.api.pagination.dependencies import page_request
 from pipeline.api.pagination.pages import build_page
 
 # FastAPI reads the route signatures at runtime
-from pipeline.api.pagination.types import Page, PageRequest  # noqa: TC001
+from pipeline.api.pagination.types import Page  # noqa: TC001
 from pipeline.api.problems.types import ProblemDetail
+from pipeline.cik import padded_cik
 from pipeline.curated.exceptions import CompanyNotFoundError
 from pipeline.curated.services import CompanyService  # noqa: TC001
 from pipeline.curated.types import (
@@ -23,6 +24,7 @@ from pipeline.curated.types import (
     FilingFilters,  # noqa: TC001
     FilingSortKey,
 )
+from pipeline.pagination.types import PageRequest  # noqa: TC001
 
 UNKNOWN_CIK_RESPONSES: dict[int | str, dict[str, Any]] = {
     HTTPStatus.NOT_FOUND: {"model": ProblemDetail}

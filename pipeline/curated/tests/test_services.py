@@ -2,7 +2,6 @@ from datetime import UTC, date, datetime
 
 import pytest
 
-from pipeline.api.pagination.types import PageRequest
 from pipeline.curated.exceptions import CompanyNotFoundError
 from pipeline.curated.services import CompanyService
 from pipeline.curated.tests.fakes import FakeCompanyRepository, FakeFilingRepository
@@ -15,6 +14,7 @@ from pipeline.curated.types import (
     FilingSortKey,
     Ticker,
 )
+from pipeline.pagination.types import PageRequest
 
 pytestmark = pytest.mark.anyio
 

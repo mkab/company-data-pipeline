@@ -6,7 +6,6 @@ from pipeline.curated.repositories import PostgresCompanyRepository, PostgresFil
 if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio import AsyncSession
 
-    from pipeline.api.pagination.types import PageRequest
     from pipeline.curated.protocols import CompanyRepository, FilingRepository
     from pipeline.curated.types import (
         CompanyDetails,
@@ -17,6 +16,7 @@ if TYPE_CHECKING:
         FilingFilters,
         FilingSortKey,
     )
+    from pipeline.pagination.types import PageRequest
 
 
 class CompanyService:

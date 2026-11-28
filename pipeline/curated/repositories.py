@@ -9,13 +9,13 @@ from pipeline.curated.types import CompanyDetails, CompanySummary, FilingDetails
 if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio import AsyncSession
 
-    from pipeline.api.pagination.types import PageRequest
     from pipeline.curated.types import (
         CompanyFilters,
         CompanySortKey,
         FilingFilters,
         FilingSortKey,
     )
+    from pipeline.pagination.types import PageRequest
 
 
 def tickers_subquery() -> sa.ScalarSelect[object]:

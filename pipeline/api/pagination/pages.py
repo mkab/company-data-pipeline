@@ -8,7 +8,7 @@ from pipeline.api.pagination.types import Page
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
 
-    from pipeline.api.pagination.types import PageRequest
+    from pipeline.pagination.types import PageRequest
 
 
 def build_page[Row, SortKey: BaseModel](

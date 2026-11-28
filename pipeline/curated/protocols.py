@@ -1,7 +1,6 @@
 from typing import TYPE_CHECKING, Protocol
 
 if TYPE_CHECKING:
-    from pipeline.api.pagination.types import PageRequest
     from pipeline.curated.types import (
         CompanyDetails,
         CompanyFilters,
@@ -11,6 +10,7 @@ if TYPE_CHECKING:
         FilingFilters,
         FilingSortKey,
     )
+    from pipeline.pagination.types import PageRequest
 
 
 class CompanyRepository(Protocol):

@@ -3,7 +3,7 @@ from datetime import date, datetime
 
 from pydantic import BaseModel, Field
 
-from pipeline.api.cik import PaddedCik
+from pipeline.cik import PaddedCik
 
 
 @dataclass(frozen=True, order=True)

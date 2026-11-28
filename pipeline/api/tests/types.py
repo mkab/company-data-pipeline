@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 
-from pipeline.api.cik import PaddedCik
+from pipeline.cik import PaddedCik
 
 
 class CompanyResponse(BaseModel):

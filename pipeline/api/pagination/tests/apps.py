@@ -4,10 +4,10 @@ from fastapi import Depends, FastAPI
 
 from pipeline.api.pagination.dependencies import page_request
 from pipeline.api.pagination.tests.types import FilingSortKey, PageRequestResponse
+from pipeline.api.problems.exception_handlers import add_exception_handlers
 
 # FastAPI reads the route signature at runtime
-from pipeline.api.pagination.types import PageRequest  # noqa: TC001
-from pipeline.api.problems.exception_handlers import add_exception_handlers
+from pipeline.pagination.types import PageRequest  # noqa: TC001
 
 
 def app_with_a_paginated_list() -> FastAPI:

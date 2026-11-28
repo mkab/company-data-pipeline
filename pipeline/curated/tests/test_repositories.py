@@ -3,7 +3,6 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from pipeline.api.pagination.types import PageRequest
 from pipeline.curated.repositories import PostgresCompanyRepository, PostgresFilingRepository
 from pipeline.curated.tests.factories import CompanyFactory, CompanyTickerFactory, FilingFactory
 from pipeline.curated.types import (
@@ -16,6 +15,7 @@ from pipeline.curated.types import (
     FilingSortKey,
     Ticker,
 )
+from pipeline.pagination.types import PageRequest
 
 if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio import AsyncSession
