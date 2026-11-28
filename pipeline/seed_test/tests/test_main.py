@@ -4,9 +4,7 @@ import sqlalchemy as sa
 from pipeline.database import session_scope
 from pipeline.raw.enums import EdgarDataset
 from pipeline.raw.models import EdgarFetch
-from pipeline.seed_test.__main__ import seed
-
-pytestmark = [pytest.mark.anyio, pytest.mark.usefixtures("database_url_as_ingest")]
+from pipeline.seed_test.__main__ import main, seed
 
 
 async def recorded_fetches() -> list[tuple[EdgarDataset, int | None, int, bool]]:
@@ -23,6 +21,8 @@ async def recorded_fetches() -> list[tuple[EdgarDataset, int | None, int, bool]]
         return list(result.all())
 
 
+@pytest.mark.anyio
+@pytest.mark.usefixtures("database_url_as_ingest")
 async def test_the_seed_records_the_committed_fixtures_of_every_edge_case() -> None:
     await seed()
 
@@ -37,3 +37,17 @@ async def test_the_seed_records_the_committed_fixtures_of_every_edge_case() -> N
         (EdgarDataset.COMPANY_FACTS, 1067983, 200, True),
         (EdgarDataset.COMPANY_FACTS, 2053456, 404, False),
     ]
+
+
+def test_the_cli_runs_the_seed(monkeypatch: pytest.MonkeyPatch) -> None:
+    seed_ran = False
+
+    async def record_the_seed_run() -> None:
+        nonlocal seed_ran
+        seed_ran = True
+
+    monkeypatch.setattr("pipeline.seed_test.__main__.seed", record_the_seed_run)
+
+    main()
+
+    assert seed_ran

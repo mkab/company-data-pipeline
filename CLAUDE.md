@@ -29,7 +29,7 @@ make lint                # ruff format --check, ruff check, mypy (no fixes), lin
 make lint-migrations     # Squawk over each revision's offline SQL (`.squawk.toml`), on the host
 make format              # ruff format, ruff check --fix, on the host
 make tests [ARGS=]       # pytest -v, in the app container, against pipeline_test
-make covtest [ARGS=]     # coverage HTML report -> htmlcov/index.html (fail_under = 96), in the app container
+make covtest [ARGS=]     # coverage HTML report -> htmlcov/index.html (fail_under = 100), in the app container
 make record-cassettes    # re-record the EDGAR cassettes against the real SEC (needs EDGAR_USER_AGENT), by hand only
 ```
 

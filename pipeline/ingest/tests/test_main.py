@@ -12,6 +12,13 @@ if TYPE_CHECKING:
     from pipeline.sources.edgar.client import EdgarClient
 
 
+async def ingest_with_a_failed_fetch(
+    edgar: EdgarClient, tracked_companies: list[TrackedCompany]
+) -> int:
+    """Stand in for `ingest`, with its signature, as a run with a failed fetch."""
+    return 1
+
+
 @pytest.mark.anyio
 @pytest.mark.usefixtures("database_url_as_ingest")
 async def test_a_run_that_records_every_fetch_exits_with_zero(
@@ -51,3 +58,12 @@ def test_the_cli_says_why_it_refuses_to_start(
         "EDGAR_USER_AGENT is required: "
         'set it to a name and a contact email, such as "Jane Doe jane@example.com"'
     )
+
+
+def test_the_cli_exits_with_the_status_of_the_ingest_run(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("EDGAR_USER_AGENT", "Jane Doe jane@example.com")
+    monkeypatch.setattr("pipeline.ingest.__main__.ingest", ingest_with_a_failed_fetch)
+
+    assert main() == 1

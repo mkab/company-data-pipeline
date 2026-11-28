@@ -11,7 +11,7 @@ An external provider the pipeline collects data from, such as SEC EDGAR.
 _Avoid_: Provider, API, feed, upstream
 
 **Dataset**:
-One kind of data a source publishes, such as the company tickers list, a company's submissions, or a company's facts.
+One kind of data a source publishes, such as the tickers file, a company's submissions, or a company's facts.
 _Avoid_: Kind, endpoint, resource, feed
 
 **Fetch**:
@@ -32,12 +32,16 @@ _Avoid_: Issuer, registrant, entity, ticker (as a synonym)
 The Central Index Key, the SEC's permanent numeric identifier for a company.
 _Avoid_: Company id, SEC id
 
+**Tickers file**:
+The dataset that lists every company with a ticker, by CIK, with its name, tickers and exchanges. The only source of tickers.
+_Avoid_: Tickers list, ticker list, company list
+
 **Ticker**:
 A trading symbol listed against a company on an exchange. It can change; the CIK does not.
 _Avoid_: Symbol
 
 **Tracked company**:
-A company the pipeline loads filings and facts for. Every other company is known only from the tickers list.
+A company the pipeline loads filings and facts for. Every other company is known only from the tickers file.
 _Avoid_: Watchlist, portfolio, selected company
 
 ### Filings and facts
