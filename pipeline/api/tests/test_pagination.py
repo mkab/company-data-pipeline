@@ -15,7 +15,7 @@ from pipeline.api.pagination import (
     page_request,
 )
 from pipeline.api.problems import add_problem_handlers
-from pipeline.api.tests.conftest import client_for
+from pipeline.api.tests.clients import client_for
 
 
 class FilingSortKey(BaseModel):
@@ -48,6 +48,17 @@ def test_a_cursor_round_trips_its_sort_key() -> None:
     sort_key = FilingSortKey(filing_date=date(2025, 8, 1), accession_number="0000320193-25-000073")
 
     assert decode_cursor(encode_cursor(sort_key), FilingSortKey) == sort_key
+
+
+class FactSortKey(BaseModel):
+    period_end: date
+    period_start: date | None
+
+
+def test_a_cursor_round_trips_a_null_in_its_sort_key() -> None:
+    sort_key = FactSortKey(period_end=date(2025, 9, 27), period_start=None)
+
+    assert decode_cursor(encode_cursor(sort_key), FactSortKey) == sort_key
 
 
 @pytest.mark.parametrize(
