@@ -114,7 +114,7 @@ dbt:
 
 .PHONY: curated-drift
 curated-drift:
-	@# As the api role, which reads every curated table, on the test database dbt built.
+	@# As the api role, which reads every curated table, on the test database dbt built
 	@# The password reaches the container through `.env`
 	$(APP_RUN) sh -c 'DATABASE_URL="postgresql+psycopg://api:$$API_DB_PASSWORD@db:5432/pipeline_test" python -m pipeline.curated.drift'
 

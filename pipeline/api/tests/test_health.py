@@ -2,8 +2,8 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from pipeline.database import get_engine, get_sessionmaker
-from pipeline.settings import get_settings
+from pipeline.database import get_engine
+from pipeline.tests.roles import clear_database_caches
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator
@@ -19,14 +19,10 @@ UNREACHABLE_DATABASE_URL = "postgresql+psycopg://api:api@localhost:1/pipeline_te
 @pytest.fixture
 async def database_down(monkeypatch: pytest.MonkeyPatch) -> AsyncIterator[None]:
     monkeypatch.setenv("DATABASE_URL", UNREACHABLE_DATABASE_URL)
-    get_settings.cache_clear()
-    get_engine.cache_clear()
-    get_sessionmaker.cache_clear()
+    clear_database_caches()
     yield
     await get_engine().dispose()
-    get_settings.cache_clear()
-    get_engine.cache_clear()
-    get_sessionmaker.cache_clear()
+    clear_database_caches()
 
 
 async def test_health_returns_ok(client: AsyncClient) -> None:

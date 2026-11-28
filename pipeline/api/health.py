@@ -12,9 +12,9 @@ from pipeline.api.dependencies import get_session
 from pipeline.api.problems import ProblemDetail
 from pipeline.database import ping_database
 
-router = APIRouter(prefix="/health")
-
 DATABASE_UNREACHABLE_DETAIL = "The database is unreachable"
+
+router = APIRouter(prefix="/health")
 
 
 class HealthResponse(BaseModel):

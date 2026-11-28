@@ -11,9 +11,8 @@ from pipeline.curated.drift import (
     main,
     report_drift,
 )
-from pipeline.database import CURATED_SCHEMA, curated_metadata, get_engine, get_sessionmaker
-from pipeline.settings import get_settings
-from pipeline.tests.roles import connecting_as, role_database_url
+from pipeline.database import CURATED_SCHEMA, curated_metadata
+from pipeline.tests.roles import clear_database_caches, connecting_as, role_database_url
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -116,12 +115,6 @@ async def test_a_column_renamed_in_the_database_alone_is_drift() -> None:
         "Declared but not built: companies.name text null",
         "Built but not declared: companies.company_name text null",
     ]
-
-
-def clear_database_caches() -> None:
-    get_settings.cache_clear()
-    get_engine.cache_clear()
-    get_sessionmaker.cache_clear()
 
 
 @pytest.fixture

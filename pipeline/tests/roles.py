@@ -9,7 +9,7 @@ from sqlalchemy import make_url
 from sqlalchemy.ext.asyncio import create_async_engine
 
 import pipeline.raw.models  # noqa: F401  # registers the raw tables on `alembic_metadata`
-from pipeline.database import RAW_SCHEMA, alembic_metadata
+from pipeline.database import RAW_SCHEMA, alembic_metadata, get_engine, get_sessionmaker
 from pipeline.settings import get_migration_settings, get_settings
 
 if TYPE_CHECKING:
@@ -32,6 +32,13 @@ def role_database_url(role: str) -> str:
         .set(username=role, password=os.environ[ROLE_PASSWORD_VARIABLES[role]])
         .render_as_string(hide_password=False)
     )
+
+
+def clear_database_caches() -> None:
+    """Forget the cached settings, engine and session factory, so the next use reads `DATABASE_URL` again."""
+    get_settings.cache_clear()
+    get_engine.cache_clear()
+    get_sessionmaker.cache_clear()
 
 
 @contextlib.asynccontextmanager

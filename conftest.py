@@ -7,10 +7,10 @@ from alembic import command
 from alembic.config import Config
 from sqlalchemy import make_url
 
-from pipeline.database import get_engine, get_sessionmaker
+from pipeline.database import get_engine
 from pipeline.settings import get_migration_settings, get_settings
 from pipeline.tests.curated import create_curated_tables
-from pipeline.tests.roles import empty_raw_tables, role_database_url
+from pipeline.tests.roles import clear_database_caches, empty_raw_tables, role_database_url
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Iterator
@@ -29,12 +29,6 @@ def with_test_database_name(url: str) -> str:
 def clear_settings_caches() -> None:
     get_settings.cache_clear()
     get_migration_settings.cache_clear()
-
-
-def clear_database_caches() -> None:
-    get_settings.cache_clear()
-    get_engine.cache_clear()
-    get_sessionmaker.cache_clear()
 
 
 @pytest.fixture

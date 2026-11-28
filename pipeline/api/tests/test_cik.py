@@ -6,7 +6,7 @@ from pydantic import BaseModel
 
 from pipeline.api.cik import PaddedCik, cik_from_path
 from pipeline.api.problems import add_problem_handlers
-from pipeline.api.tests.conftest import client_for
+from pipeline.api.tests.clients import client_for
 
 pytestmark = pytest.mark.anyio
 

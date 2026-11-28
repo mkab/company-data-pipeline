@@ -1,18 +1,14 @@
 from typing import TYPE_CHECKING
 
 import pytest
-from httpx2 import ASGITransport, AsyncClient
 
 from pipeline.api.app import create_app
+from pipeline.api.tests.clients import client_for
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator
 
-    from fastapi import FastAPI
-
-
-def client_for(app: FastAPI) -> AsyncClient:
-    return AsyncClient(transport=ASGITransport(app=app), base_url="http://test")
+    from httpx2 import AsyncClient
 
 
 @pytest.fixture
