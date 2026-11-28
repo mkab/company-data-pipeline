@@ -1,39 +1,23 @@
 import asyncio
 import logging
-from dataclasses import dataclass
 from http import HTTPStatus
 from typing import TYPE_CHECKING
 
 from pipeline.database import session_scope
+from pipeline.ingest.types import FetchTarget
 from pipeline.raw.enums import EdgarDataset
 from pipeline.raw.services import EdgarFetchService
-from pipeline.sources.edgar.client import UnexpectedPayloadError
-from pipeline.sources.http import SourceRefusedError, SourceUnavailableError
+from pipeline.sources.edgar.exceptions import UnexpectedPayloadError
+from pipeline.sources.exceptions import SourceRefusedError, SourceUnavailableError
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
 
-    from pipeline.ingest.tracked_companies import TrackedCompany
+    from pipeline.ingest.types import TrackedCompany
     from pipeline.sources.edgar.client import EdgarClient
-    from pipeline.sources.http import FetchedResponse
+    from pipeline.sources.types import FetchedResponse
 
 logger = logging.getLogger(__name__)
-
-
-@dataclass(frozen=True)
-class FetchTarget:
-    """Which dataset a fetch is for, and for which company.
-
-    `cik` is `None` for the tickers file.
-    """
-
-    dataset: EdgarDataset
-    cik: int | None
-
-    def describe(self) -> str:
-        if self.cik is None:
-            return str(self.dataset)
-        return f"{self.dataset} for CIK {self.cik}"
 
 
 async def run_ingest(

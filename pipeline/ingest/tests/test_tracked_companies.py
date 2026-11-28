@@ -4,7 +4,8 @@ import pydantic
 import pytest
 
 from pipeline.ingest.constants import TRACKED_COMPANIES_PATH
-from pipeline.ingest.tracked_companies import TrackedCompany, load_tracked_companies
+from pipeline.ingest.tracked_companies import load_tracked_companies
+from pipeline.ingest.types import TrackedCompany
 
 if TYPE_CHECKING:
     from pathlib import Path

@@ -10,7 +10,7 @@ if TYPE_CHECKING:
 
     from pipeline.raw.enums import EdgarDataset
     from pipeline.raw.protocols import EdgarFetchRepository, EdgarPayloadRepository
-    from pipeline.sources.http import FetchedResponse
+    from pipeline.sources.types import FetchedResponse
 
 
 class EdgarFetchService:

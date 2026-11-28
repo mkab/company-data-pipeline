@@ -3,12 +3,10 @@ from pathlib import Path
 import httpx2
 import pytest
 
-from pipeline.sources.edgar.client import (
-    EdgarClient,
-    UnexpectedPayloadError,
-    edgar_source_settings,
-)
-from pipeline.sources.http import SourceClient, SourceRefusedError
+from pipeline.sources.edgar.client import EdgarClient, edgar_source_settings
+from pipeline.sources.edgar.exceptions import UnexpectedPayloadError
+from pipeline.sources.exceptions import SourceRefusedError
+from pipeline.sources.http import SourceClient
 from pipeline.sources.tests.fakes import ScriptedSource
 
 TICKERS_FIXTURE = Path(__file__).parent / "fixtures" / "company_tickers_exchange.json"

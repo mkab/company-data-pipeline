@@ -5,12 +5,12 @@ from pipeline.database import session_scope
 from pipeline.raw.enums import EdgarDataset
 from pipeline.raw.services import EdgarFetchService
 from pipeline.sources.edgar.client import TICKERS_URL, company_facts_url, submissions_url
-from pipeline.sources.http import FetchedResponse
+from pipeline.sources.types import FetchedResponse
 
 if TYPE_CHECKING:
     from pathlib import Path
 
-    from pipeline.seed_test.manifest import SeedFetch
+    from pipeline.seed_test.types import SeedFetch
 
 
 def edgar_url(dataset: EdgarDataset, cik: int | None) -> str:

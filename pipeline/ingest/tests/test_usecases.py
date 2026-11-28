@@ -5,14 +5,15 @@ import pytest
 import sqlalchemy as sa
 
 from pipeline.database import session_scope
-from pipeline.ingest.usecases import FetchTarget, run_ingest
+from pipeline.ingest.types import FetchTarget
+from pipeline.ingest.usecases import run_ingest
 from pipeline.raw.enums import EdgarDataset
 from pipeline.raw.models import EdgarFetch, EdgarPayload
 from pipeline.sources.edgar.client import TICKERS_URL, submissions_url
 
 if TYPE_CHECKING:
     from pipeline.ingest.tests.fakes import FakeEdgar
-    from pipeline.ingest.tracked_companies import TrackedCompany
+    from pipeline.ingest.types import TrackedCompany
     from pipeline.sources.edgar.client import EdgarClient
 
 pytestmark = [pytest.mark.anyio, pytest.mark.usefixtures("database_url_as_ingest")]

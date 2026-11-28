@@ -8,7 +8,7 @@ from pipeline.sources.edgar.client import submissions_url
 
 if TYPE_CHECKING:
     from pipeline.ingest.tests.fakes import FakeEdgar
-    from pipeline.ingest.tracked_companies import TrackedCompany
+    from pipeline.ingest.types import TrackedCompany
     from pipeline.sources.edgar.client import EdgarClient
 
 

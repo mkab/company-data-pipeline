@@ -5,7 +5,7 @@ import pytest
 import stamina
 
 from pipeline.ingest.tests.fakes import FakeEdgar
-from pipeline.ingest.tracked_companies import TrackedCompany
+from pipeline.ingest.types import TrackedCompany
 from pipeline.sources.edgar.client import EdgarClient, edgar_source_settings
 from pipeline.sources.http import SourceClient
 from pipeline.sources.tests.fakes import FakeClock
