@@ -53,6 +53,7 @@ Ruff (`pyproject.toml`) enforces most of these, plus no naive datetimes (`DTZ`),
 - **Names used only in type hints are imported under `if TYPE_CHECKING:`**, and the annotation stays unquoted (ruff strict `TC001`-`TC004`, `UP037`). Exception: FastAPI and pydantic read annotations at runtime, so a name in a route or dependency signature, or in a pydantic model, must be a real import. `pydantic.BaseModel` is listed in ruff's `runtime-evaluated-base-classes`; a new runtime reader is added there.
 - **Imports go at the top of the module**, absolute only (no relative imports). Keep a function-level import only when a real cycle forces it, with a comment naming it. Import a name from the module that defines it, never from one that merely imports it.
 - **Enums go in their package's `enums.py`, and constants in its `constants.py`** (a constant used by one module only may sit at the top of it, directly under the imports). Never partway down a file between classes.
+- **Exceptions go in their package's `exceptions.py`, and dataclasses and pydantic models in its `types.py`** (SQLAlchemy models stay in `models.py`). A module that would hold several of these kinds, or several jobs, becomes a package with one file per kind or job, such as `pipeline/api/pagination/` (`types.py`, `exceptions.py`, `constants.py`, `cursors.py`, `dependencies.py`, `pages.py`).
 - **No `print`** in application code (ruff `T20`): use the logger.
 - **User-facing copy is sentence case**: every error message and response text. Proper nouns and acronyms keep their case.
 
@@ -80,6 +81,8 @@ The judgement rules (backward compatibility, drops over several releases, a roll
 ## Testing
 
 pytest. Test data comes from factories (factory_boy), in a `factories.py` next to the tests of the package whose rows they build. A test calls a factory with the fields it relies on, as literals. A fixture is a named scenario several tests reuse; the root `conftest.py` holds no test data, only global patches and shared utilities.
+
+A test module holds its tests, its constants at the top, and helpers only its tests use. Test-only classes and models never sit in it: they go in the tests package's `types.py`, a test app (a throwaway FastAPI app around one dependency or handler) in its `apps.py`, other shared helpers in a module named for what they do (such as `clients.py`), and fixtures in a `conftest.py`. A conftest only defines fixtures: a test never imports from it.
 
 Tests never call a real external source: they run against recorded or mocked responses.
 
