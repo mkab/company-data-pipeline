@@ -1,7 +1,9 @@
 # Curated holds the business entities the API serves, with the rules applied.
 # Every model is a table rebuilt in full each run, under an enforced contract (dbt_project.yml):
 # the build fails when a column's name or type differs from the one declared here.
-# The primary key constraints make the keys not null in the database too, which the API's drift check reads
+# The primary key constraints make the keys not null in the database too,
+# as the not_null constraint does `filings.filing_date`, the API's sort key.
+# The API's drift check reads that nullability
 models:
   - name: companies
     description: >
@@ -95,8 +97,11 @@ models:
         description: The form type, such as `10-K`, `20-F` or `8-K`.
         data_type: text
       - name: filing_date
-        description: The day the filing was filed.
+        description: The day the filing was filed, never null, since the API sorts filings by it.
         data_type: date
+        constraints:
+          - type: not_null
+        data_tests: [not_null]
       - name: report_date
         description: The end of the period the filing reports on, null when it reports on none.
         data_type: date
