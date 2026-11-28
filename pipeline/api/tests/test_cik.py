@@ -1,0 +1,62 @@
+from typing import Annotated
+
+import pytest
+from fastapi import Depends, FastAPI
+from pydantic import BaseModel
+
+from pipeline.api.cik import PaddedCik, cik_from_path
+from pipeline.api.problems import add_problem_handlers
+from pipeline.api.tests.conftest import client_for
+
+pytestmark = pytest.mark.anyio
+
+
+class CompanyResponse(BaseModel):
+    cik: PaddedCik
+
+
+def app_with_a_cik_path() -> FastAPI:
+    app = FastAPI()
+    add_problem_handlers(app)
+
+    @app.get("/companies/{cik}")
+    async def company(cik: Annotated[int, Depends(cik_from_path)]) -> CompanyResponse:
+        return CompanyResponse(cik=cik)
+
+    return app
+
+
+@pytest.mark.parametrize(
+    ("path_cik", "response_cik"),
+    [
+        ("320193", "0000320193"),
+        ("0000320193", "0000320193"),
+        ("0", "0000000000"),
+        ("9999999999", "9999999999"),
+    ],
+)
+async def test_a_cik_is_normalised_and_returned_padded(path_cik: str, response_cik: str) -> None:
+    async with client_for(app_with_a_cik_path()) as client:
+        response = await client.get(f"/companies/{path_cik}")
+
+    assert response.status_code == 200
+    assert response.json() == {"cik": response_cik}
+
+
+@pytest.mark.parametrize(
+    "path_cik",
+    [
+        "AAPL",
+        "00003201930",
+        "-320193",
+        "3201.93",
+        # 320193 in fullwidth digits, which `\d` would accept
+        "\uff13\uff12\uff10\uff11\uff19\uff13",
+    ],
+)
+async def test_a_cik_that_is_not_1_to_10_digits_is_a_422(path_cik: str) -> None:
+    async with client_for(app_with_a_cik_path()) as client:
+        response = await client.get(f"/companies/{path_cik}")
+
+    assert response.status_code == 422
+    assert response.json()["errors"][0]["location"] == ["path", "cik"]
