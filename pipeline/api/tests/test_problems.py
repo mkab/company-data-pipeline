@@ -1,10 +1,10 @@
 from typing import TYPE_CHECKING, Annotated
 
 import pytest
-from fastapi import FastAPI, Query
+from fastapi import FastAPI, HTTPException, Query
 
 from pipeline.api.problems import add_problem_handlers, sentence_case
-from pipeline.api.tests.conftest import client_for
+from pipeline.api.tests.clients import client_for
 
 if TYPE_CHECKING:
     from httpx2 import AsyncClient
@@ -68,4 +68,28 @@ async def test_a_bad_query_parameter_is_a_422_problem_in_sentence_case() -> None
                 "message": "Input should be greater than or equal to 1",
             }
         ],
+    }
+
+
+def app_raising_a_404_of_ours() -> FastAPI:
+    app = FastAPI()
+    add_problem_handlers(app)
+
+    @app.get("/concepts/revenues")
+    async def concept() -> None:
+        raise HTTPException(404, detail="No concept us-gaap/Revenues")
+
+    return app
+
+
+@pytest.mark.anyio
+async def test_a_detail_of_ours_keeps_its_case() -> None:
+    async with client_for(app_raising_a_404_of_ours()) as client:
+        response = await client.get("/concepts/revenues")
+
+    assert response.json() == {
+        "type": "about:blank",
+        "title": "Not found",
+        "status": 404,
+        "detail": "No concept us-gaap/Revenues",
     }

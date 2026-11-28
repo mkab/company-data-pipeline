@@ -72,12 +72,15 @@ async def http_exception_handler(request: Request, error: HTTPException) -> JSON
     """Serve an `HTTPException` as a problem.
 
     Starlette's own (an unknown path, a wrong method) carry the status phrase as their detail,
-    which comes out in sentence case like a detail of ours.
+    which comes out in sentence case.
+    A detail of ours is written in sentence case already,
+    and kept as it is, so a concept name such as `Revenues` keeps its case.
     """
+    is_status_phrase = error.detail == HTTPStatus(error.status_code).phrase
     problem = ProblemDetail(
         title=status_title(error.status_code),
         status=error.status_code,
-        detail=sentence_case(error.detail),
+        detail=status_title(error.status_code) if is_status_phrase else error.detail,
     )
     return problem_response(problem, headers=error.headers)
 
