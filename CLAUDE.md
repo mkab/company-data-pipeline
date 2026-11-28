@@ -24,6 +24,7 @@ make migrations-check    # drop dbt's schemas, then upgrade head, alembic check,
 make ingest              # fetch the tickers file and the tracked companies (`config/tracked_companies.toml`) into raw, as the ingest role (needs EDGAR_USER_AGENT)
 make seed-test           # migrate pipeline_test and load the committed EDGAR fixtures (`pipeline/seed_test/fixtures`) into its raw, as the ingest role
 make dbt [ARGS=]         # dbt in its container, as the dbt role (default `build`; `ARGS="build --target test"` after seed-test)
+make curated-drift       # compare pipeline_test's curated columns with `pipeline.curated.models`, as the api role (after a test dbt build; in CI)
 make pipeline            # make ingest, then dbt build
 make lint                # ruff format --check, ruff check, mypy (no fixes), lint-migrations, on the host
 make lint-migrations     # Squawk over each revision's offline SQL (`.squawk.toml`), on the host
@@ -46,6 +47,7 @@ Ruff (`pyproject.toml`) enforces most of these, plus no naive datetimes (`DTZ`),
 
 - **Layers: router, usecase, service, repository** (`docs/adr/0001-routers-usecases-services-repositories.md`). Business rules live in usecases and services; repositories only query.
 - **Tables are declarative models** inheriting from `pipeline.database.ModelBase`, never Core `sa.Table`s. `ModelBase` and `DeclarativeBase` are in ruff's `runtime-evaluated-base-classes`, since SQLAlchemy reads `Mapped[...]` at runtime.
+- **Curated tables are the exception to `ModelBase`**: dbt builds them, so their models (`pipeline/curated/models.py`) inherit from `pipeline.database.CuratedModelBase`, which adds no standard columns and keeps them off Alembic's metadata. Each mirrors its dbt contract (`dbt/models/curated/_curated__models.yml`): change both together, or `make curated-drift` fails CI.
 - **Never build SQL from strings.** Every value reaches the database as a bound parameter, never by f-string, `%` or `.format()` into the statement (ruff `S608`). This covers the Python code; dbt models are SQL by design and take values through `ref`, `source` and `var`, not string building.
 - **Types: strict mypy.** Every first-party module is fully annotated, and no module is relaxed by a `[[tool.mypy.overrides]]` entry. Overrides are only for third-party packages that ship no types. A `# type: ignore` names its error code and a comment says why.
 - **Names used only in type hints are imported under `if TYPE_CHECKING:`**, and the annotation stays unquoted (ruff strict `TC001`-`TC004`, `UP037`). Exception: FastAPI and pydantic read annotations at runtime, so a name in a route or dependency signature, or in a pydantic model, must be a real import. `pydantic.BaseModel` is listed in ruff's `runtime-evaluated-base-classes`; a new runtime reader is added there.

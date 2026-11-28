@@ -113,6 +113,9 @@ jobs:
 
       - run: make dbt ARGS="build --target test"
 
+      # A curated column dbt changed but the API's declaration did not fails here
+      - run: make curated-drift
+
   # The squash merge makes the PR title the commit message on main
   pr-title:
     if: github.event_name == 'pull_request'
